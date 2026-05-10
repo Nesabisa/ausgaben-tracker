@@ -133,12 +133,12 @@
   <div class="card">
     <h2>Einstellungen</h2>
     <div class="row" style="margin-bottom:10px">
-      <input id="name1" type="text" placeholder="Name 1 (z.B. Sabine)" maxlength="20" />
-      <input id="name2" type="text" placeholder="Name 2 (z.B. Pedro)" maxlength="20" />
+      <input id="name1" type="text" placeholder="Name 1" maxlength="20" value="Pedro" />
+      <input id="name2" type="text" placeholder="Name 2" maxlength="20" value="Sabine" />
     </div>
     <div class="row" style="align-items:center">
       <label style="font-size:0.9rem;color:#666;white-space:nowrap">Monatsbudget:</label>
-      <input id="budget" type="number" value="300" min="1" step="10" style="max-width:110px" />
+      <input id="budget" type="number" value="600" min="1" step="10" style="max-width:110px" />
       <span style="color:#999;font-size:0.9rem">€</span>
     </div>
   </div>
@@ -453,8 +453,10 @@
       if (s.name1) document.getElementById('name1').value = s.name1;
       if (s.name2) document.getElementById('name2').value = s.name2;
       if (s.budget) document.getElementById('budget').value = s.budget;
-      renderUI();
+    } else {
+      speichereEinstellungenFirebase();
     }
+    renderUI();
   });
 
   renderUI();
