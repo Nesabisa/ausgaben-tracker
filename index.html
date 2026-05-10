@@ -59,25 +59,14 @@
       cursor: pointer;
     }
     .btn:hover { background: #574fd6; }
-    .btn-ghost {
-      padding: 8px 16px;
-      background: #f5f5f5;
-      color: #555;
-      border: none;
-      border-radius: 10px;
-      font-size: 0.95rem;
-      cursor: pointer;
-    }
-    .btn-ghost:hover { background: #ebe8ff; color: #6c63ff; }
+    .btn:disabled { background: #ccc; cursor: default; }
 
-    /* Monats-Navigation */
     .monat-nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
     }
-
     .monat-nav button {
       background: none;
       border: 1.5px solid #e5e5e5;
@@ -88,22 +77,9 @@
       color: #555;
     }
     .monat-nav button:hover { border-color: #6c63ff; color: #6c63ff; }
+    .monat-label { font-size: 1.2rem; font-weight: 700; color: #1a1a2e; text-align: center; flex: 1; }
 
-    .monat-label {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: #1a1a2e;
-      text-align: center;
-      flex: 1;
-    }
-
-    /* Budget Übersicht */
-    .budget-zahlen {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-
+    .budget-zahlen { display: flex; justify-content: space-between; margin-bottom: 8px; }
     .budget-zahlen .gross { font-size: 1.6rem; font-weight: 700; color: #1a1a2e; }
     .budget-zahlen .klein { font-size: 0.8rem; color: #aaa; margin-bottom: 3px; }
     .budget-zahlen .rest { font-size: 1.1rem; font-weight: 600; }
@@ -111,19 +87,11 @@
     .balken-bg { background: #f0f0f0; border-radius: 99px; height: 12px; overflow: hidden; margin-bottom: 10px; }
     .balken { height: 100%; border-radius: 99px; transition: width 0.4s; background: #10b981; }
     .balken.mittel { background: #f59e0b; }
-    .balken.drüber { background: #ef4444; }
+    .balken.drueber { background: #ef4444; }
 
-    .status-text {
-      text-align: center;
-      font-size: 0.9rem;
-      font-weight: 600;
-      padding: 8px 14px;
-      border-radius: 10px;
-      background: #d1fae5;
-      color: #065f46;
-    }
+    .status-text { text-align: center; font-size: 0.9rem; font-weight: 600; padding: 8px 14px; border-radius: 10px; background: #d1fae5; color: #065f46; }
     .status-text.mittel { background: #fef3c7; color: #92400e; }
-    .status-text.drüber { background: #fee2e2; color: #991b1b; }
+    .status-text.drueber { background: #fee2e2; color: #991b1b; }
 
     .beitraege { display: flex; gap: 12px; margin-top: 14px; }
     .beitrag-box { flex: 1; background: #f8f7ff; border-radius: 12px; padding: 12px; text-align: center; }
@@ -131,7 +99,6 @@
     .beitrag-box .p-betrag { font-size: 1.25rem; font-weight: 700; color: #6c63ff; }
     .beitrag-box .p-anteil { font-size: 0.75rem; color: #ccc; margin-top: 2px; }
 
-    /* Tabelle */
     table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
     th { text-align: left; padding: 7px 10px; color: #ccc; font-weight: 600; border-bottom: 1.5px solid #f2f2f2; }
     td { padding: 10px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
@@ -142,30 +109,26 @@
     .del { background: none; border: none; color: #ddd; cursor: pointer; font-size: 1rem; padding: 3px 8px; border-radius: 6px; }
     .del:hover { background: #fee2e2; color: #dc2626; }
 
-    /* Monatsübersicht */
-    .verlauf-zeile {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 4px;
-      border-bottom: 1px solid #f5f5f5;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
+    .verlauf-zeile { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid #f5f5f5; font-size: 0.9rem; cursor: pointer; }
     .verlauf-zeile:hover { background: #fafafa; border-radius: 8px; }
     .verlauf-zeile:last-child { border-bottom: none; }
-    .verlauf-monat { font-weight: 600; color: #333; }
+    .verlauf-monat { font-weight: 600; color: #333; min-width: 110px; }
     .verlauf-balken-bg { flex: 1; margin: 0 12px; background: #f0f0f0; border-radius: 99px; height: 8px; overflow: hidden; }
     .verlauf-balken { height: 100%; border-radius: 99px; background: #10b981; }
     .verlauf-balken.mittel { background: #f59e0b; }
-    .verlauf-balken.drüber { background: #ef4444; }
+    .verlauf-balken.drueber { background: #ef4444; }
     .verlauf-summe { font-weight: 600; white-space: nowrap; }
+
+    #sync-status { text-align: center; font-size: 0.8rem; color: #aaa; margin-bottom: 12px; }
+    #sync-status.fehler { color: #ef4444; }
+    #sync-status.ok { color: #10b981; }
   </style>
 </head>
 <body>
 <div class="container">
   <h1>🛒 Essens-Budget</h1>
   <p class="subtitle">Gemeinsames Monatsbudget</p>
+  <div id="sync-status">Verbinde...</div>
 
   <div class="card">
     <h2>Einstellungen</h2>
@@ -224,7 +187,7 @@
     </div>
     <div class="row">
       <select id="wer"></select>
-      <button class="btn" onclick="hinzufuegen()">+ Eintragen</button>
+      <button class="btn" id="btn-hinzu" onclick="hinzufuegen()">+ Eintragen</button>
     </div>
   </div>
 
@@ -236,31 +199,34 @@
     </table>
   </div>
 
-  <div class="card" id="verlauf-card">
+  <div class="card">
     <h2>Alle Monate im Überblick</h2>
     <div id="verlauf-liste"><div class="leer">Noch keine Daten.</div></div>
   </div>
 </div>
 
-<script>
-  var MONATE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDBeS_N564vAqpdFEuTXtwmRq1NQxJyTGo",
+    authDomain: "ausgaben-ac792.firebaseapp.com",
+    projectId: "ausgaben-ac792",
+    storageBucket: "ausgaben-ac792.firebasestorage.app",
+    messagingSenderId: "1036481285970",
+    appId: "1:1036481285970:web:c442d03361f44a9185348b"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const MONATE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 
   var heute = new Date();
   var aktJahr = heute.getFullYear();
-  var aktMonat = heute.getMonth(); // 0-11
-
-  function monatKey(j, m) { return j + '-' + m; }
-
-  // Globale Variable als Hauptspeicher — localStorage nur als Backup
-  var daten = {};
-  try {
-    var s = localStorage.getItem('essens-budget-v2');
-    if (s) daten = JSON.parse(s);
-  } catch(e) {}
-
-  function speichern() {
-    try { localStorage.setItem('essens-budget-v2', JSON.stringify(daten)); } catch(e) {}
-  }
+  var aktMonat = heute.getMonth();
+  var alleData = {};
 
   function n1() { return document.getElementById('name1').value.trim() || 'Person 1'; }
   function n2() { return document.getElementById('name2').value.trim() || 'Person 2'; }
@@ -270,14 +236,25 @@
     return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
   }
 
-  function monatWechseln(richtung) {
+  function monatKey(j, m) { return j + '-' + m; }
+
+  window.monatWechseln = function(richtung) {
     aktMonat += richtung;
     if (aktMonat > 11) { aktMonat = 0; aktJahr++; }
     if (aktMonat < 0) { aktMonat = 11; aktJahr--; }
-    aktualisieren();
+    renderUI();
+  };
+
+  async function speichern() {
+    try {
+      await setDoc(doc(db, "budget", "daten"), alleData);
+    } catch(e) {
+      document.getElementById('sync-status').textContent = 'Fehler beim Speichern';
+      document.getElementById('sync-status').className = 'fehler';
+    }
   }
 
-  function hinzufuegen() {
+  window.hinzufuegen = async function() {
     var laden = document.getElementById('laden').value.trim();
     var betragStr = document.getElementById('betrag').value;
     var betrag = parseFloat(betragStr);
@@ -287,53 +264,53 @@
     if (!betragStr || isNaN(betrag) || betrag <= 0) { alert('Bitte einen gültigen Betrag eingeben.'); return; }
 
     var key = monatKey(aktJahr, aktMonat);
-    if (!daten[key]) daten[key] = [];
-    daten[key].push({ laden: laden, betrag: betrag, person: person });
-    speichern();
+    if (!alleData[key]) alleData[key] = [];
+    alleData[key].push({ laden: laden, betrag: betrag, person: person, ts: Date.now() });
 
     document.getElementById('laden').value = '';
     document.getElementById('betrag').value = '';
-    aktualisieren();
-  }
+    renderUI();
+    await speichern();
+  };
 
-  function bearbeiten(index) {
+  window.bearbeiten = async function(index) {
     var key = monatKey(aktJahr, aktMonat);
-    var e = daten[key][index];
+    var e = alleData[key][index];
     document.getElementById('laden').value = e.laden;
     document.getElementById('betrag').value = e.betrag;
     document.getElementById('wer').value = e.person;
-    daten[key].splice(index, 1);
-    speichern();
-    aktualisieren();
+    alleData[key].splice(index, 1);
+    renderUI();
+    await speichern();
     document.getElementById('laden').focus();
-  }
+  };
 
-  function loeschen(index) {
+  window.loeschen = async function(index) {
     var key = monatKey(aktJahr, aktMonat);
-    if (daten[key]) {
-      daten[key].splice(index, 1);
-      speichern();
+    if (alleData[key]) {
+      alleData[key].splice(index, 1);
+      renderUI();
+      await speichern();
     }
-    aktualisieren();
-  }
+  };
 
-  function aktualisieren() {
+  function renderUI() {
     var jetzt = new Date();
-    var istZukunft = (aktJahr > jetzt.getFullYear()) ||
-      (aktJahr === jetzt.getFullYear() && aktMonat > jetzt.getMonth());
+    var istZukunft = (aktJahr > jetzt.getFullYear()) || (aktJahr === jetzt.getFullYear() && aktMonat > jetzt.getMonth());
     document.getElementById('btn-vor').disabled = istZukunft;
     document.getElementById('btn-vor').style.opacity = istZukunft ? '0.3' : '1';
-
     document.getElementById('monat-label').textContent = MONATE[aktMonat] + ' ' + aktJahr;
 
     var sel = document.getElementById('wer');
+    var selVal = sel.value;
     sel.innerHTML = '<option value="1">' + n1() + '</option><option value="2">' + n2() + '</option>';
+    if (selVal) sel.value = selVal;
 
     document.getElementById('b-name1').textContent = n1();
     document.getElementById('b-name2').textContent = n2();
 
     var key = monatKey(aktJahr, aktMonat);
-    var eintraege = daten[key] || [];
+    var eintraege = alleData[key] || [];
 
     var sum1 = 0, sum2 = 0;
     for (var i = 0; i < eintraege.length; i++) {
@@ -359,9 +336,9 @@
       statusEl.textContent = 'Noch kein Einkauf eingetragen.';
       statusEl.className = 'status-text';
     } else if (gesamt > bud) {
-      balken.className = 'balken drüber';
+      balken.className = 'balken drueber';
       statusEl.textContent = '⚠️ Budget überschritten um ' + euro(gesamt - bud) + '!';
-      statusEl.className = 'status-text drüber';
+      statusEl.className = 'status-text drueber';
     } else if (prozent >= 80) {
       balken.className = 'balken mittel';
       statusEl.textContent = 'Fast aufgebraucht — noch ' + euro(rest) + ' übrig.';
@@ -390,17 +367,15 @@
           + '<td><span class="tag" style="' + farbe + '">' + name + '</span></td>'
           + '<td>' + euro(e.betrag) + '</td>'
           + '<td style="white-space:nowrap">'
-          + '<button class="del" onclick="bearbeiten(' + j + ')" style="margin-right:4px" title="Bearbeiten">✏️</button>'
-          + '<button class="del" onclick="loeschen(' + j + ')" title="Löschen">✕</button>'
+          + '<button class="del" onclick="bearbeiten(' + j + ')" style="margin-right:4px">✏️</button>'
+          + '<button class="del" onclick="loeschen(' + j + ')">✕</button>'
           + '</td></tr>';
       }
       liste.innerHTML = html;
     }
 
-    // Verlaufsübersicht
     var verlaufHtml = '';
-    var alleKeys = Object.keys(daten).filter(function(k) { return daten[k] && daten[k].length > 0; });
-
+    var alleKeys = Object.keys(alleData).filter(function(k) { return alleData[k] && alleData[k].length > 0; });
     alleKeys.sort().reverse();
 
     if (alleKeys.length === 0) {
@@ -410,11 +385,11 @@
         var mk = alleKeys[k];
         var parts = mk.split('-');
         var mj = parseInt(parts[0]), mm = parseInt(parts[1]);
-        var mEintraege = daten[mk];
+        var mEintraege = alleData[mk];
         var mGesamt = 0;
         for (var mi = 0; mi < mEintraege.length; mi++) mGesamt += mEintraege[mi].betrag;
         var mProzent = Math.min((mGesamt / bud) * 100, 100);
-        var mKlasse = mGesamt > bud ? 'drüber' : mProzent >= 80 ? 'mittel' : '';
+        var mKlasse = mGesamt > bud ? 'drueber' : mProzent >= 80 ? 'mittel' : '';
         var istAktiv = (mj === aktJahr && mm === aktMonat);
         verlaufHtml += '<div class="verlauf-zeile" onclick="zuMonat(' + mj + ',' + mm + ')" style="' + (istAktiv ? 'background:#f5f3ff;border-radius:10px' : '') + '">'
           + '<span class="verlauf-monat">' + MONATE[mm] + ' ' + mj + '</span>'
@@ -426,18 +401,13 @@
     document.getElementById('verlauf-liste').innerHTML = verlaufHtml;
   }
 
-  function zuMonat(j, m) {
-    aktJahr = j;
-    aktMonat = m;
-    aktualisieren();
+  window.zuMonat = function(j, m) {
+    aktJahr = j; aktMonat = m;
+    renderUI();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  };
 
-  document.getElementById('name1').addEventListener('input', aktualisieren);
-  document.getElementById('name2').addEventListener('input', aktualisieren);
-  document.getElementById('budget').addEventListener('input', aktualisieren);
-
-  // Einstellungen speichern
+  // Einstellungen
   function ladeEinstellungen() {
     try {
       var s = localStorage.getItem('essens-settings');
@@ -459,12 +429,30 @@
     } catch(e) {}
   }
 
+  document.getElementById('name1').addEventListener('input', renderUI);
+  document.getElementById('name2').addEventListener('input', renderUI);
+  document.getElementById('budget').addEventListener('input', renderUI);
   document.getElementById('name1').addEventListener('change', speichereEinstellungen);
   document.getElementById('name2').addEventListener('change', speichereEinstellungen);
   document.getElementById('budget').addEventListener('change', speichereEinstellungen);
 
+  // Echtzeit-Sync: hört auf Änderungen in Firebase
   ladeEinstellungen();
-  aktualisieren();
+  renderUI();
+
+  onSnapshot(doc(db, "budget", "daten"), function(snapshot) {
+    if (snapshot.exists()) {
+      alleData = snapshot.data();
+    } else {
+      alleData = {};
+    }
+    renderUI();
+    document.getElementById('sync-status').textContent = '● Verbunden — Änderungen werden sofort synchronisiert';
+    document.getElementById('sync-status').className = 'ok';
+  }, function(error) {
+    document.getElementById('sync-status').textContent = 'Verbindungsfehler: ' + error.message;
+    document.getElementById('sync-status').className = 'fehler';
+  });
 </script>
 </body>
 </html>
