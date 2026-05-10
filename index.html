@@ -183,7 +183,7 @@
     <h2>Einkauf eintragen</h2>
     <div class="row" style="margin-bottom:10px">
       <input id="laden" type="text" placeholder="Wo? (z.B. Rewe, Aldi…)" />
-      <input id="betrag" type="number" placeholder="Betrag €" min="0.01" step="0.01" style="max-width:130px" />
+      <input id="betrag" type="text" inputmode="decimal" placeholder="z.B. 12,50" style="max-width:130px" />
     </div>
     <div class="row">
       <select id="wer"></select>
@@ -266,7 +266,7 @@
 
   window.hinzufuegen = async function() {
     var laden = document.getElementById('laden').value.trim();
-    var betragStr = document.getElementById('betrag').value;
+    var betragStr = document.getElementById('betrag').value.replace(',', '.');
     var betrag = parseFloat(betragStr);
     var person = document.getElementById('wer').value;
 
