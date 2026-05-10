@@ -254,6 +254,16 @@
     }
   }
 
+  async function speichereEinstellungenFirebase() {
+    try {
+      await setDoc(doc(db, "budget", "einstellungen"), {
+        name1: document.getElementById('name1').value,
+        name2: document.getElementById('name2').value,
+        budget: document.getElementById('budget').value
+      });
+    } catch(e) {}
+  }
+
   window.hinzufuegen = async function() {
     var laden = document.getElementById('laden').value.trim();
     var betragStr = document.getElementById('betrag').value;
@@ -432,12 +442,21 @@
   document.getElementById('name1').addEventListener('input', renderUI);
   document.getElementById('name2').addEventListener('input', renderUI);
   document.getElementById('budget').addEventListener('input', renderUI);
-  document.getElementById('name1').addEventListener('change', speichereEinstellungen);
-  document.getElementById('name2').addEventListener('change', speichereEinstellungen);
-  document.getElementById('budget').addEventListener('change', speichereEinstellungen);
+  document.getElementById('name1').addEventListener('change', speichereEinstellungenFirebase);
+  document.getElementById('name2').addEventListener('change', speichereEinstellungenFirebase);
+  document.getElementById('budget').addEventListener('change', speichereEinstellungenFirebase);
 
-  // Echtzeit-Sync: hört auf Änderungen in Firebase
-  ladeEinstellungen();
+  // Echtzeit-Sync für Einstellungen
+  onSnapshot(doc(db, "budget", "einstellungen"), function(snapshot) {
+    if (snapshot.exists()) {
+      var s = snapshot.data();
+      if (s.name1) document.getElementById('name1').value = s.name1;
+      if (s.name2) document.getElementById('name2').value = s.name2;
+      if (s.budget) document.getElementById('budget').value = s.budget;
+      renderUI();
+    }
+  });
+
   renderUI();
 
   onSnapshot(doc(db, "budget", "daten"), function(snapshot) {
