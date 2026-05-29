@@ -178,8 +178,19 @@
     /* ACTION BUTTONS in rows */
     .btn-edit { background: #f5f3ff; border: none; border-radius: 7px; padding: 5px 9px; cursor: pointer; font-size: 0.9rem; color: #7c3aed; }
     .btn-edit:hover { background: #ede9fe; }
-    .btn-del  { background: #fff0f0; border: none; border-radius: 7px; padding: 5px 9px; cursor: pointer; font-size: 0.9rem; color: #dc2626; margin-left: 6px; }
+    .btn-del  { background: #fff0f0; border: none; border-radius: 7px; padding: 5px 9px; cursor: pointer; font-size: 0.9rem; color: #dc2626; margin-left: 5px; }
     .btn-del:hover  { background: #fee2e2; }
+
+    /* ALIGNED ENTRY TABLE */
+    .eintrag-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .eintrag-table td { padding: 10px 4px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; overflow: hidden; }
+    .eintrag-table tr:last-child td { border-bottom: none; }
+    .eintrag-table .col-name { font-weight: 600; font-size: 0.9rem; white-space: nowrap; text-overflow: ellipsis; }
+    .eintrag-table .col-dat  { width: 44px; font-size: 0.75rem; color: #bbb; white-space: nowrap; }
+    .eintrag-table .col-who  { width: 30px; text-align: center; }
+    .eintrag-table .col-amt  { width: 74px; text-align: right; font-weight: 700; font-size: 0.88rem; white-space: nowrap; }
+    .eintrag-table .col-act  { width: 60px; text-align: right; white-space: nowrap; padding-right: 0; }
+    .eintrag-table .col-ico  { width: 26px; text-align: center; font-size: 0.95rem; }
 
     /* STORE CHIPS in settings */
     .vorlage-chip { display: inline-flex; align-items: center; gap: 4px; background: #f5f3ff; color: #5b21b6; border-radius: 20px; padding: 3px 8px 3px 12px; font-size: 0.82rem; font-weight: 600; }
@@ -268,7 +279,7 @@
 
     <div class="card">
       <h2>Einkäufe diesen Monat</h2>
-      <div id="liste"></div>
+      <table class="eintrag-table"><tbody id="liste"></tbody></table>
     </div>
 
     <div class="card">
@@ -335,7 +346,7 @@
 
     <div class="card">
       <h2>Einträge diesen Monat</h2>
-      <div id="essen-liste"></div>
+      <table class="eintrag-table"><tbody id="essen-liste"></tbody></table>
     </div>
 
     <div class="card">
@@ -748,7 +759,7 @@
     // Liste
     var liste = document.getElementById('liste');
     if (eintraege.length === 0) {
-      liste.innerHTML = '<div class="leer">Noch keine Einkäufe.</div>';
+      liste.innerHTML = '<tr><td colspan="5" class="leer">Noch keine Einkäufe.</td></tr>';
     } else {
       var html = '';
       for (var j = eintraege.length - 1; j >= 0; j--) {
@@ -756,15 +767,14 @@
         var init = (e.person === '1' ? n1() : n2()).charAt(0).toUpperCase();
         var initFarbe = e.person === '1' ? 'background:#ede9fe;color:#5b21b6' : 'background:#fce7f3;color:#9d174d';
         var datKurz = formatDatumKurz(e.datum);
-        var editBorder = editIndexEinkauf === j ? 'border-left:3px solid #6c63ff;background:#faf9ff;padding-left:9px;border-radius:8px;' : '';
-        html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 4px;border-bottom:1px solid #f5f5f5;' + editBorder + '">'
-          + '<div style="flex:1;font-weight:600;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + e.laden + '</div>'
-          + (datKurz ? '<div style="font-size:0.75rem;color:#bbb;flex-shrink:0">' + datKurz + '</div>' : '')
-          + '<div style="width:24px;height:24px;border-radius:50%;' + initFarbe + ';font-size:0.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + init + '</div>'
-          + '<div style="font-weight:700;font-size:0.9rem;white-space:nowrap;flex-shrink:0">' + euro(e.betrag) + '</div>'
-          + '<button class="btn-edit" onclick="bearbeiten(' + j + ')">✏️</button>'
-          + '<button class="btn-del" onclick="loeschen(' + j + ')">✕</button>'
-          + '</div>';
+        var editStyle = editIndexEinkauf === j ? ' style="background:#faf9ff"' : '';
+        html += '<tr' + editStyle + '>'
+          + '<td class="col-name" style="' + (editIndexEinkauf===j ? 'border-left:3px solid #6c63ff;padding-left:8px;' : '') + '">' + e.laden + '</td>'
+          + '<td class="col-dat">' + datKurz + '</td>'
+          + '<td class="col-who"><div style="width:24px;height:24px;border-radius:50%;' + initFarbe + ';font-size:0.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto">' + init + '</div></td>'
+          + '<td class="col-amt">' + euro(e.betrag) + '</td>'
+          + '<td class="col-act"><button class="btn-edit" onclick="bearbeiten(' + j + ')">✏️</button><button class="btn-del" onclick="loeschen(' + j + ')">✕</button></td>'
+          + '</tr>';
       }
       liste.innerHTML = html;
     }
@@ -818,7 +828,7 @@
     // Liste
     var liste = document.getElementById('essen-liste');
     if (eintraege.length === 0) {
-      liste.innerHTML = '<div class="leer">Noch keine Einträge.</div>';
+      liste.innerHTML = '<tr><td colspan="6" class="leer">Noch keine Einträge.</td></tr>';
     } else {
       var html = '';
       for (var j = eintraege.length - 1; j >= 0; j--) {
@@ -830,16 +840,15 @@
                       : 'background:#fef3c7;color:#92400e';
         var typIcon = e.typ === 'bestellen' ? '📦' : '🍽️';
         var datKurz = formatDatumKurz(e.datum);
-        var editBorder = editIndexEssen === j ? 'border-left:3px solid #f97316;background:#fff7f0;padding-left:9px;border-radius:8px;' : '';
-        html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 4px;border-bottom:1px solid #f5f5f5;' + editBorder + '">'
-          + '<div style="font-size:1rem;flex-shrink:0">' + typIcon + '</div>'
-          + '<div style="flex:1;font-weight:600;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (e.wo||'—') + '</div>'
-          + (datKurz ? '<div style="font-size:0.75rem;color:#bbb;flex-shrink:0">' + datKurz + '</div>' : '')
-          + '<div style="width:24px;height:24px;border-radius:50%;' + initFarbe + ';font-size:0.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + init + '</div>'
-          + '<div style="font-weight:700;font-size:0.9rem;white-space:nowrap;flex-shrink:0">' + euro(e.betrag) + '</div>'
-          + '<button class="btn-edit" onclick="essenBearbeiten(' + j + ')">✏️</button>'
-          + '<button class="btn-del" onclick="essenLoeschen(' + j + ')">✕</button>'
-          + '</div>';
+        var editStyle = editIndexEssen === j ? ' style="background:#fff7f0"' : '';
+        html += '<tr' + editStyle + '>'
+          + '<td class="col-ico">' + typIcon + '</td>'
+          + '<td class="col-name" style="' + (editIndexEssen===j ? 'border-left:3px solid #f97316;padding-left:8px;' : '') + '">' + (e.wo||'—') + '</td>'
+          + '<td class="col-dat">' + datKurz + '</td>'
+          + '<td class="col-who"><div style="width:24px;height:24px;border-radius:50%;' + initFarbe + ';font-size:0.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto">' + init + '</div></td>'
+          + '<td class="col-amt">' + euro(e.betrag) + '</td>'
+          + '<td class="col-act"><button class="btn-edit" onclick="essenBearbeiten(' + j + ')">✏️</button><button class="btn-del" onclick="essenLoeschen(' + j + ')">✕</button></td>'
+          + '</tr>';
       }
       liste.innerHTML = html;
     }
