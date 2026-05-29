@@ -185,6 +185,41 @@
     .vorlage-chip { display:inline-flex;align-items:center;gap:3px;background:#f5f3ff;color:#5b21b6;border-radius:20px;padding:3px 6px 3px 10px;font-size:0.8rem;font-weight:600; }
     .vorlage-chip button { background:none;border:none;cursor:pointer;color:#a89fd8;font-size:0.95rem;padding:0;line-height:1; }
 
+    /* CUSTOM STORE DROPDOWN */
+    .laden-select-wrap { position: relative; flex: 1; min-width: 120px; }
+    .laden-trigger {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 13px; border: 1.5px solid #e5e5e5; border-radius: 10px;
+      background: white; font-size: 0.95rem; cursor: pointer; text-align: left;
+    }
+    .laden-trigger:focus { outline: none; border-color: #6c63ff; }
+    .laden-trigger.open { border-color: #6c63ff; }
+    .laden-trigger-text { color: #aaa; }
+    .laden-trigger-text.has-value { color: #333; }
+    .laden-trigger-arrow { color: #bbb; font-size: 0.75rem; margin-left: 4px; flex-shrink: 0; }
+    .laden-dropdown {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: white; border: 1.5px solid #e5e5e5; border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12); z-index: 200;
+      overflow: hidden; max-height: 220px; overflow-y: auto; display: none;
+    }
+    .laden-dropdown.open { display: block; }
+    .laden-opt {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 13px; cursor: pointer; font-size: 0.92rem;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .laden-opt:last-child { border-bottom: none; }
+    .laden-opt:hover { background: #faf9ff; }
+    .laden-opt.selected { background: #f5f3ff; color: #5b21b6; font-weight: 600; }
+    .laden-opt.placeholder-opt { color: #aaa; }
+    .laden-opt.other-opt { color: #8b7db8; font-style: italic; }
+    .laden-opt-del {
+      background: none; border: none; cursor: pointer; color: #d0c8f0;
+      font-size: 1rem; padding: 0 0 0 10px; line-height: 1; flex-shrink: 0;
+    }
+    .laden-opt-del:hover { color: #dc2626; }
+
     /* ALIGNED ENTRY TABLE */
     .eintrag-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
     .eintrag-table td { padding: 8px 3px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; overflow: hidden; }
@@ -270,7 +305,13 @@
     <div class="card">
       <h2>Add Purchase</h2>
       <div class="row" style="margin-bottom:10px">
-        <select id="laden-select" onchange="ladenSelectChange()" style="flex:1;min-width:120px"></select>
+        <div class="laden-select-wrap" id="laden-wrap">
+          <button type="button" class="laden-trigger" id="laden-trigger" onclick="toggleLadenDropdown()">
+            <span class="laden-trigger-text" id="laden-display">Where?</span>
+            <span class="laden-trigger-arrow">▾</span>
+          </button>
+          <div class="laden-dropdown" id="laden-dropdown"></div>
+        </div>
         <input id="laden-custom" type="text" placeholder="Enter store name…" style="display:none;flex:1;min-width:120px" />
         <input id="betrag" type="text" inputmode="decimal" placeholder="e.g. 12,50" style="max-width:130px" />
       </div>
@@ -430,18 +471,70 @@
   }
 
   // ── Store dropdown helpers
+  var selectedLaden = '';
+
   function rebuildLadenOptions() {
-    var sel = document.getElementById('laden-select');
-    if (!sel) return;
-    var prev = sel.value;
-    var all = DEFAULT_STORES.concat(customStores).sort(function(a,b){ return a.localeCompare(b,'de'); });
-    var html = '<option value="">Where?</option>';
-    all.forEach(function(s){ html += '<option value="' + s + '">' + s + '</option>'; });
-    html += '<option value="__custom__">✏️ Other store…</option>';
-    sel.innerHTML = html;
-    if (prev) sel.value = prev;
+    var dd = document.getElementById('laden-dropdown');
+    if (!dd) return;
+    var defaults = DEFAULT_STORES.slice().sort(function(a,b){ return a.localeCompare(b,'de'); });
+    var customs  = customStores.slice().sort(function(a,b){ return a.localeCompare(b,'de'); });
+    var html = '<div class="laden-opt placeholder-opt" onclick="selectLaden(\'\')">Where?</div>';
+    defaults.forEach(function(s) {
+      var esc = s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html += '<div class="laden-opt' + (selectedLaden===s?' selected':'') + '" onclick="selectLaden(\'' + esc + '\')">' + s + '</div>';
+    });
+    customs.forEach(function(s, i) {
+      var esc = s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html += '<div class="laden-opt' + (selectedLaden===s?' selected':'') + '" onclick="selectLaden(\'' + esc + '\')">'
+        + '<span>' + s + '</span>'
+        + '<button class="laden-opt-del" onclick="event.stopPropagation();vorlageLoeschen(' + i + ')" title="Remove">×</button>'
+        + '</div>';
+    });
+    html += '<div class="laden-opt other-opt" onclick="selectLaden(\'__custom__\')">✏️ Other store…</div>';
+    dd.innerHTML = html;
   }
-  function rebuildDatalist() { rebuildLadenOptions(); } // alias for old call sites
+  function rebuildDatalist() { rebuildLadenOptions(); }
+
+  window.toggleLadenDropdown = function() {
+    var dd = document.getElementById('laden-dropdown');
+    var trigger = document.getElementById('laden-trigger');
+    if (!dd) return;
+    var opening = !dd.classList.contains('open');
+    dd.classList.toggle('open', opening);
+    trigger.classList.toggle('open', opening);
+    if (opening) rebuildLadenOptions();
+  };
+
+  window.selectLaden = function(value) {
+    selectedLaden = value;
+    var display = document.getElementById('laden-display');
+    var custom  = document.getElementById('laden-custom');
+    var dd      = document.getElementById('laden-dropdown');
+    var trigger = document.getElementById('laden-trigger');
+    if (value === '' || value == null) {
+      display.textContent = 'Where?'; display.className = 'laden-trigger-text';
+      custom.style.display = 'none';
+    } else if (value === '__custom__') {
+      display.textContent = 'Other store…'; display.className = 'laden-trigger-text has-value';
+      custom.style.display = ''; custom.focus();
+    } else {
+      display.textContent = value; display.className = 'laden-trigger-text has-value';
+      custom.style.display = 'none';
+    }
+    dd.classList.remove('open'); trigger.classList.remove('open');
+    rebuildLadenOptions();
+  };
+
+  // Close dropdown on outside click
+  document.addEventListener('click', function(e) {
+    var wrap = document.getElementById('laden-wrap');
+    if (wrap && !wrap.contains(e.target)) {
+      var dd = document.getElementById('laden-dropdown');
+      var trigger = document.getElementById('laden-trigger');
+      if (dd) { dd.classList.remove('open'); }
+      if (trigger) trigger.classList.remove('open');
+    }
+  });
 
   function renderVorlagen() {
     var wrap = document.getElementById('custom-stores-wrap');
@@ -465,23 +558,18 @@
     speichereEinstellungen();
   };
 
-  window.ladenSelectChange = function() {
-    var isCustom = document.getElementById('laden-select').value === '__custom__';
-    var ci = document.getElementById('laden-custom');
-    ci.style.display = isCustom ? '' : 'none';
-    if (isCustom) ci.focus();
-  };
-
   function getLaden() {
-    var sel = document.getElementById('laden-select');
-    if (sel.value === '__custom__') return (document.getElementById('laden-custom').value || '').trim();
-    return sel.value;
+    if (selectedLaden === '__custom__') return (document.getElementById('laden-custom').value || '').trim();
+    return selectedLaden;
   }
 
   function resetLadenForm() {
-    document.getElementById('laden-select').value = '';
-    document.getElementById('laden-custom').value = '';
-    document.getElementById('laden-custom').style.display = 'none';
+    selectedLaden = '';
+    var display = document.getElementById('laden-display');
+    if (display) { display.textContent = 'Where?'; display.className = 'laden-trigger-text'; }
+    var custom = document.getElementById('laden-custom');
+    if (custom) { custom.value = ''; custom.style.display = 'none'; }
+    rebuildLadenOptions();
   }
 
 
@@ -619,15 +707,13 @@
     var key = monatKey(aktJahr, aktMonat);
     var e = alleData[key][index];
     editIndexEinkauf = index;
-    // Fill select or custom input depending on whether store is in the list
+    // Fill dropdown or custom input depending on whether store is in the list
     var allStores = DEFAULT_STORES.concat(customStores);
     if (allStores.indexOf(e.laden) >= 0) {
-      document.getElementById('laden-select').value = e.laden;
-      document.getElementById('laden-custom').style.display = 'none';
+      selectLaden(e.laden);
     } else {
-      document.getElementById('laden-select').value = '__custom__';
+      selectLaden('__custom__');
       document.getElementById('laden-custom').value = e.laden;
-      document.getElementById('laden-custom').style.display = '';
     }
     document.getElementById('betrag').value = String(e.betrag).replace('.', ',');
     document.getElementById('wer').value = e.person;
