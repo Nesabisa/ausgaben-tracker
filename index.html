@@ -4,14 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Expense Tracker</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Jost', -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #fdf8f2;
       min-height: 100vh;
       padding: 16px 16px 24px;
@@ -19,10 +16,9 @@
 
     h1 {
       text-align: center;
-      font-family: 'Cormorant Garamond', serif;
-      font-weight: 300;
-      font-size: 2rem;
-      letter-spacing: 0.04em;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.01em;
       color: #2d2640;
       margin-bottom: 4px;
     }
@@ -38,7 +34,6 @@
       box-shadow: 0 2px 12px rgba(108,99,255,0.06);
     }
     .card h2 {
-      font-family: 'Jost', sans-serif;
       font-size: 0.68rem;
       text-transform: uppercase;
       letter-spacing: 0.14em;
@@ -63,7 +58,6 @@
       padding: 10px 8px;
       border: none;
       border-radius: 10px;
-      font-family: 'Jost', sans-serif;
       font-size: 0.88rem;
       font-weight: 600;
       cursor: pointer;
@@ -92,7 +86,7 @@
       box-shadow: none;
     }
     .monat-nav button:hover { border-color: #6c63ff; color: #6c63ff; }
-    .monat-label { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 400; color: #2d2640; text-align: center; flex: 1; letter-spacing: 0.03em; }
+    .monat-label { font-size: 1.2rem; font-weight: 700; color: #2d2640; text-align: center; flex: 1; }
 
     .row { display: flex; gap: 10px; flex-wrap: wrap; }
 
@@ -102,7 +96,6 @@
       padding: 10px 13px;
       border: 1px solid #e8e3f5;
       border-radius: 10px;
-      font-family: 'Jost', sans-serif;
       font-size: 0.95rem;
       background: #fdf8f2;
       color: #2d2640;
@@ -116,7 +109,6 @@
       color: white;
       border: none;
       border-radius: 10px;
-      font-family: 'Jost', sans-serif;
       font-size: 0.95rem;
       cursor: pointer;
       font-weight: 600;
@@ -127,9 +119,9 @@
 
     /* BUDGET OVERVIEW */
     .budget-zahlen { display: flex; justify-content: space-between; margin-bottom: 8px; }
-    .budget-zahlen .gross { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400; color: #2d2640; }
+    .budget-zahlen .gross { font-size: 1.6rem; font-weight: 700; color: #2d2640; }
     .budget-zahlen .klein { font-size: 0.72rem; color: #c4bedf; margin-bottom: 3px; letter-spacing: 0.05em; text-transform: uppercase; }
-    .budget-zahlen .rest { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 400; }
+    .budget-zahlen .rest { font-size: 1.1rem; font-weight: 600; }
     .balken-bg { background: #ede8ff; border-radius: 99px; height: 8px; overflow: hidden; margin-bottom: 10px; }
     .balken { height: 100%; border-radius: 99px; transition: width 0.4s; background: #8bc4a0; }
     .balken.mittel { background: #d4a96a; }
@@ -140,7 +132,7 @@
     .beitraege { display: flex; gap: 12px; margin-top: 14px; }
     .beitrag-box { flex: 1; background: #f8f5ff; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid #ede8ff; }
     .beitrag-box .p-name { font-size: 0.72rem; color: #c4bedf; margin-bottom: 3px; letter-spacing: 0.06em; text-transform: uppercase; }
-    .beitrag-box .p-betrag { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400; color: #6c63ff; }
+    .beitrag-box .p-betrag { font-size: 1.25rem; font-weight: 700; color: #6c63ff; }
     .beitrag-box .p-anteil { font-size: 0.72rem; color: #c4bedf; margin-top: 2px; }
 
     /* TABLE */
@@ -156,19 +148,19 @@
     .verlauf-zeile { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid #f5f0ff; font-size: 0.9rem; cursor: pointer; }
     .verlauf-zeile:hover { background: #fdf8f2; border-radius: 8px; }
     .verlauf-zeile:last-child { border-bottom: none; }
-    .verlauf-monat { font-family: 'Jost', sans-serif; font-weight: 500; color: #2d2640; min-width: 110px; }
+    .verlauf-monat { font-weight: 600; color: #2d2640; min-width: 110px; }
     .verlauf-balken-bg { flex: 1; margin: 0 12px; background: #ede8ff; border-radius: 99px; height: 6px; overflow: hidden; }
     .verlauf-balken { height: 100%; border-radius: 99px; background: #8bc4a0; }
     .verlauf-balken.mittel { background: #d4a96a; }
     .verlauf-balken.drueber { background: #d4726e; }
     .verlauf-balken.essen { background: #d4956a; }
-    .verlauf-summe { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 400; white-space: nowrap; color: #2d2640; }
+    .verlauf-summe { font-size: 0.9rem; font-weight: 600; white-space: nowrap; color: #2d2640; }
 
     /* ESSEN TAB */
     .essen-summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 4px; }
     .essen-box { background: #f8f5ff; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid #ede8ff; }
     .essen-box .eb-lbl { font-size: 0.72rem; color: #c4bedf; margin-bottom: 3px; letter-spacing: 0.06em; text-transform: uppercase; }
-    .essen-box .eb-val { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; color: #6c63ff; }
+    .essen-box .eb-val { font-size: 1.2rem; font-weight: 700; color: #6c63ff; }
 
     .type-row { display: flex; gap: 8px; margin-bottom: 0; }
     .type-btn {
@@ -176,7 +168,6 @@
       padding: 9px 8px;
       border: 1px solid #e8e3f5;
       border-radius: 10px;
-      font-family: 'Jost', sans-serif;
       font-size: 0.88rem;
       font-weight: 600;
       cursor: pointer;
@@ -211,7 +202,7 @@
     .laden-trigger {
       width: 100%; display: flex; justify-content: space-between; align-items: center;
       padding: 10px 13px; border: 1px solid #e8e3f5; border-radius: 10px;
-      background: #fdf8f2; font-family: 'Jost', sans-serif; font-size: 0.95rem; cursor: pointer; text-align: left;
+      background: #fdf8f2; font-size: 0.95rem; cursor: pointer; text-align: left;
     }
     .laden-trigger:focus { outline: none; border-color: #6c63ff; }
     .laden-trigger.open { border-color: #6c63ff; background: #fffdfb; }
@@ -227,7 +218,7 @@
     .laden-dropdown.open { display: block; }
     .laden-opt {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 9px 13px; cursor: pointer; font-family: 'Jost', sans-serif; font-size: 0.92rem;
+      padding: 9px 13px; cursor: pointer; font-size: 0.92rem;
       border-bottom: 1px solid #f5f0ff;
     }
     .laden-opt:last-child { border-bottom: none; }
@@ -248,7 +239,7 @@
     .eintrag-table .col-name { width: 85px; font-weight: 500; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #2d2640; }
     .eintrag-table .col-dat  { width: 40px; font-size: 0.72rem; color: #c4bedf; white-space: nowrap; }
     .eintrag-table .col-who  { width: 28px; text-align: center; }
-    .eintrag-table .col-amt  { width: 68px; text-align: right; font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 1rem; white-space: nowrap; color: #2d2640; }
+    .eintrag-table .col-amt  { width: 68px; text-align: right; font-weight: 700; font-size: 0.88rem; white-space: nowrap; }
     .eintrag-table .col-act  { width: 48px; text-align: right; white-space: nowrap; padding-right: 0; }
     .eintrag-table .col-ico  { width: 24px; text-align: center; font-size: 0.92rem; }
 
@@ -260,7 +251,7 @@
 <body>
 <div class="container">
   <h1>Expense Tracker</h1>
-  <p style="text-align:center;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:#c4bedf;margin-bottom:16px;font-family:'Jost',sans-serif">Sabine &amp; Pedro</p>
+  <p style="text-align:center;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:#c4bedf;margin-bottom:16px">Sabine &amp; Pedro</p>
   <div id="sync-status">Connecting...</div>
 
   <!-- Shared: Settings -->
