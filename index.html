@@ -267,15 +267,15 @@
         <select id="wer"></select>
         <button class="btn" id="btn-hinzu" onclick="hinzufuegen()">+ Eintragen</button>
       </div>
+      <div id="undo-wrap-einkauf" style="display:none;margin-top:10px">
+        <button onclick="rueckgaengig('einkauf')" style="width:100%;padding:10px;border:1.5px solid #6c63ff;border-radius:10px;background:#f5f3ff;color:#6c63ff;font-size:0.9rem;font-weight:600;cursor:pointer">↩ Rückgängig machen</button>
+      </div>
     </div>
 
     <div class="card">
-      <div class="card-hd-row">
-        <h2>Einkäufe diesen Monat</h2>
-        <button class="undo-btn" id="undo-btn-einkauf" onclick="rueckgaengig('einkauf')" disabled>↩ Rückgängig</button>
-      </div>
+      <h2>Einkäufe diesen Monat</h2>
       <table>
-        <thead><tr><th>Ort</th><th>Datum</th><th>Wer</th><th>Betrag</th><th></th></tr></thead>
+        <thead><tr><th></th><th>Ort</th><th style="text-align:right">Betrag</th><th></th></tr></thead>
         <tbody id="liste"></tbody>
       </table>
     </div>
@@ -334,15 +334,15 @@
         <button class="type-btn" id="btn-bestellen" onclick="setTyp('bestellen')">📦 Bestellen</button>
       </div>
       <button class="btn" onclick="essenHinzufuegen()" style="width:100%">+ Eintragen</button>
+      <div id="undo-wrap-essen" style="display:none;margin-top:10px">
+        <button onclick="rueckgaengig('essen')" style="width:100%;padding:10px;border:1.5px solid #6c63ff;border-radius:10px;background:#f5f3ff;color:#6c63ff;font-size:0.9rem;font-weight:600;cursor:pointer">↩ Rückgängig machen</button>
+      </div>
     </div>
 
     <div class="card">
-      <div class="card-hd-row">
-        <h2>Einträge diesen Monat</h2>
-        <button class="undo-btn" id="undo-btn-essen" onclick="rueckgaengig('essen')" disabled>↩ Rückgängig</button>
-      </div>
+      <h2>Einträge diesen Monat</h2>
       <table>
-        <thead><tr><th>Wo / Was</th><th>Typ</th><th>Wer</th><th>Betrag</th><th></th></tr></thead>
+        <thead><tr><th></th><th>Wo / Was</th><th style="text-align:right">Betrag</th><th></th></tr></thead>
         <tbody id="essen-liste"></tbody>
       </table>
     </div>
@@ -406,10 +406,10 @@
 
   // ── Undo helpers
   function updateUndoBtns() {
-    var bE = document.getElementById('undo-btn-einkauf');
-    var bEs = document.getElementById('undo-btn-essen');
-    if (bE)  { bE.disabled  = !undoEinkauf; bE.classList.toggle('aktiv',  !!undoEinkauf); }
-    if (bEs) { bEs.disabled = !undoEssen;   bEs.classList.toggle('aktiv', !!undoEssen);   }
+    var wE  = document.getElementById('undo-wrap-einkauf');
+    var wEs = document.getElementById('undo-wrap-essen');
+    if (wE)  wE.style.display  = undoEinkauf ? '' : 'none';
+    if (wEs) wEs.style.display = undoEssen   ? '' : 'none';
   }
 
   window.rueckgaengig = async function(tab) {
@@ -672,11 +672,16 @@
         var e = eintraege[j];
         var name = e.person === '1' ? n1() : n2();
         var farbe = e.person === '1' ? 'background:#ede9fe;color:#5b21b6' : 'background:#fce7f3;color:#9d174d';
-        html += '<tr><td><div style="font-weight:600">' + e.laden + '</div></td>'
-          + '<td style="font-size:0.82rem;color:#bbb;white-space:nowrap">' + formatDatum(e.datum) + '</td>'
-          + '<td><span class="tag" style="' + farbe + '">' + name + '</span></td>'
-          + '<td>' + euro(e.betrag) + '</td>'
-          + '<td style="white-space:nowrap"><button class="del" onclick="bearbeiten(' + j + ')" style="margin-right:4px">✏️</button><button class="del" onclick="loeschen(' + j + ')">✕</button></td></tr>';
+        html += '<tr>'
+          + '<td style="padding:8px 4px 8px 2px;width:32px"><button class="del" onclick="bearbeiten(' + j + ')">✏️</button></td>'
+          + '<td><div style="font-weight:600">' + e.laden + '</div>'
+          + '<div style="font-size:0.78rem;color:#bbb;margin-top:2px;display:flex;gap:6px;align-items:center">'
+          + '<span>' + formatDatum(e.datum) + '</span>'
+          + '<span class="tag" style="' + farbe + '">' + name + '</span>'
+          + '</div></td>'
+          + '<td style="text-align:right;font-weight:600;white-space:nowrap;padding-right:4px">' + euro(e.betrag) + '</td>'
+          + '<td style="padding:8px 2px 8px 4px;width:32px"><button class="del" onclick="loeschen(' + j + ')">✕</button></td>'
+          + '</tr>';
       }
       liste.innerHTML = html;
     }
@@ -738,14 +743,18 @@
         var name = e.person === '1' ? n1() : e.person === '2' ? n2() : 'Beide';
         var pFarbe = e.person === '1' ? 'background:#ede9fe;color:#5b21b6' : e.person === '2' ? 'background:#fce7f3;color:#9d174d' : 'background:#fef3c7;color:#92400e';
         var typCls = e.typ === 'bestellen' ? 'best' : 'aus';
-        var typLbl = e.typ === 'bestellen' ? '📦 Bestell.' : '🍽️ Gehen';
+        var typLbl = e.typ === 'bestellen' ? '📦 Best.' : '🍽️ Gehen';
         var datStr = formatDatum(e.datum);
         html += '<tr>'
-          + '<td><div style="font-weight:600">' + (e.wo||'—') + '</div><div style="font-size:0.78rem;color:#bbb">' + datStr + '</div></td>'
-          + '<td><span class="essen-entry-typ ' + typCls + '">' + typLbl + '</span></td>'
-          + '<td><span class="tag" style="' + pFarbe + '">' + name + '</span></td>'
-          + '<td>' + euro(e.betrag) + '</td>'
-          + '<td style="white-space:nowrap"><button class="del" onclick="essenBearbeiten(' + j + ')" style="margin-right:4px">✏️</button><button class="del" onclick="essenLoeschen(' + j + ')">✕</button></td>'
+          + '<td style="padding:8px 4px 8px 2px;width:32px"><button class="del" onclick="essenBearbeiten(' + j + ')">✏️</button></td>'
+          + '<td><div style="font-weight:600">' + (e.wo||'—') + '</div>'
+          + '<div style="font-size:0.78rem;color:#bbb;margin-top:2px;display:flex;gap:5px;align-items:center;flex-wrap:wrap">'
+          + '<span>' + datStr + '</span>'
+          + '<span class="essen-entry-typ ' + typCls + '">' + typLbl + '</span>'
+          + '<span class="tag" style="' + pFarbe + '">' + name + '</span>'
+          + '</div></td>'
+          + '<td style="text-align:right;font-weight:600;white-space:nowrap;padding-right:4px">' + euro(e.betrag) + '</td>'
+          + '<td style="padding:8px 2px 8px 4px;width:32px"><button class="del" onclick="essenLoeschen(' + j + ')">✕</button></td>'
           + '</tr>';
       }
       liste.innerHTML = html;
