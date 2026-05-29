@@ -175,23 +175,15 @@
     .essen-entry-typ.aus { background: #fff7ed; color: #c2410c; }
     .essen-entry-typ.best { background: #ede9fe; color: #5b21b6; }
 
-    /* UNDO BUTTON */
-    .card-hd-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-    .card-hd-row h2 { margin-bottom: 0; }
-    .undo-btn {
-      padding: 5px 13px;
-      border: 1.5px solid #e5e5e5;
-      border-radius: 8px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      background: white;
-      color: #ccc;
-      transition: all .15s;
-    }
-    .undo-btn:not(:disabled):hover { border-color: #6c63ff; color: #6c63ff; background: #f5f3ff; }
-    .undo-btn:disabled { opacity: 0.4; cursor: default; }
-    .undo-btn.aktiv { border-color: #6c63ff; color: #6c63ff; background: #f5f3ff; }
+    /* ACTION BUTTONS in rows */
+    .btn-edit { background: #f5f3ff; border: none; border-radius: 7px; padding: 5px 9px; cursor: pointer; font-size: 0.9rem; color: #7c3aed; }
+    .btn-edit:hover { background: #ede9fe; }
+    .btn-del  { background: #fff0f0; border: none; border-radius: 7px; padding: 5px 9px; cursor: pointer; font-size: 0.9rem; color: #dc2626; margin-left: 6px; }
+    .btn-del:hover  { background: #fee2e2; }
+
+    /* STORE CHIPS in settings */
+    .vorlage-chip { display: inline-flex; align-items: center; gap: 4px; background: #f5f3ff; color: #5b21b6; border-radius: 20px; padding: 3px 8px 3px 12px; font-size: 0.82rem; font-weight: 600; }
+    .vorlage-chip button { background: none; border: none; cursor: pointer; color: #9d8fcf; font-size: 1rem; padding: 0; line-height: 1; }
   </style>
 </head>
 <body>
@@ -206,10 +198,18 @@
       <input id="name1" type="text" placeholder="Name 1" maxlength="20" value="Pedro" />
       <input id="name2" type="text" placeholder="Name 2" maxlength="20" value="Sabine" />
     </div>
-    <div class="row" style="align-items:center">
+    <div class="row" style="align-items:center;margin-bottom:14px">
       <label style="font-size:0.9rem;color:#666;white-space:nowrap">Monatsbudget Einkäufe:</label>
       <input id="budget" type="number" value="600" min="1" step="10" style="max-width:110px" />
       <span style="color:#999;font-size:0.9rem">€</span>
+    </div>
+    <div style="border-top:1px solid #f5f5f5;padding-top:12px">
+      <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.07em;color:#bbb;margin-bottom:8px">Eigene Ort-Vorlagen</div>
+      <div id="vorlagen-liste" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+      <div class="row">
+        <input id="neue-vorlage" type="text" placeholder="Neuen Ort hinzufügen…" style="font-size:0.88rem" />
+        <button onclick="vorlageHinzufuegen()" class="btn" style="background:#f5f3ff;color:#6c63ff;border:1.5px solid #ede9fe;font-size:0.85rem;padding:9px 14px;white-space:nowrap">+ Hinzufügen</button>
+      </div>
     </div>
   </div>
 
@@ -259,7 +259,8 @@
     <div class="card">
       <h2>Einkauf eintragen</h2>
       <div class="row" style="margin-bottom:10px">
-        <input id="laden" type="text" placeholder="Wo? (z.B. Rewe, Aldi…)" />
+        <input id="laden" list="laden-list" type="text" placeholder="Wo? (z.B. Rewe, Aldi…)" autocomplete="off" />
+        <datalist id="laden-list"></datalist>
         <input id="betrag" type="text" inputmode="decimal" placeholder="z.B. 12,50" style="max-width:130px" />
       </div>
       <div class="row">
@@ -275,7 +276,7 @@
     <div class="card">
       <h2>Einkäufe diesen Monat</h2>
       <table>
-        <thead><tr><th></th><th>Ort</th><th style="text-align:right">Betrag</th><th></th></tr></thead>
+        <thead><tr><th>Ort</th><th style="text-align:right">Betrag</th><th></th></tr></thead>
         <tbody id="liste"></tbody>
       </table>
     </div>
@@ -342,7 +343,7 @@
     <div class="card">
       <h2>Einträge diesen Monat</h2>
       <table>
-        <thead><tr><th></th><th>Wo / Was</th><th style="text-align:right">Betrag</th><th></th></tr></thead>
+        <thead><tr><th>Wo / Was</th><th style="text-align:right">Betrag</th><th></th></tr></thead>
         <tbody id="essen-liste"></tbody>
       </table>
     </div>
@@ -387,6 +388,10 @@
   var editModeEinkauf = false; // true when bearbeiten() put values in form
   var editModeEssen = false;
 
+  // ── Store templates
+  var DEFAULT_STORES = ['Aldi', 'Corner Store', 'Edeka', 'Lidl', 'Netto', 'Penny', 'Rewe'];
+  var customStores = [];
+
   // ── Helpers
   function n1() { return document.getElementById('name1').value.trim() || 'Person 1'; }
   function n2() { return document.getElementById('name2').value.trim() || 'Person 2'; }
@@ -403,6 +408,50 @@
     if (p.length !== 3) return s;
     return p[2] + '.' + p[1] + '.' + p[0].slice(2);
   }
+
+  // ── Store template helpers
+  function rebuildDatalist() {
+    var dl = document.getElementById('laden-list');
+    if (!dl) return;
+    var all = DEFAULT_STORES.concat(customStores).sort(function(a,b){ return a.localeCompare(b,'de'); });
+    dl.innerHTML = all.map(function(s){ return '<option value="' + s + '">'; }).join('');
+  }
+
+  function renderVorlagen() {
+    var el = document.getElementById('vorlagen-liste');
+    if (!el) return;
+    if (customStores.length === 0) {
+      el.innerHTML = '<span style="font-size:0.82rem;color:#ccc">Noch keine eigenen Orte hinzugefügt.</span>';
+      return;
+    }
+    el.innerHTML = customStores.map(function(s, i) {
+      return '<span class="vorlage-chip">' + s
+        + '<button onclick="vorlageLoeschen(' + i + ')" title="Entfernen">×</button></span>';
+    }).join('');
+  }
+
+  window.vorlageHinzufuegen = function() {
+    var input = document.getElementById('neue-vorlage');
+    var name = (input.value || '').trim();
+    if (!name) return;
+    var low = name.toLowerCase();
+    if (DEFAULT_STORES.some(function(s){ return s.toLowerCase()===low; })) { input.value=''; return; }
+    if (!customStores.some(function(s){ return s.toLowerCase()===low; })) {
+      customStores.push(name);
+      customStores.sort(function(a,b){ return a.localeCompare(b,'de'); });
+      rebuildDatalist();
+      renderVorlagen();
+      speichereEinstellungen();
+    }
+    input.value = '';
+  };
+
+  window.vorlageLoeschen = function(index) {
+    customStores.splice(index, 1);
+    rebuildDatalist();
+    renderVorlagen();
+    speichereEinstellungen();
+  };
 
   // ── Undo helpers
   function updateUndoBtns() {
@@ -487,7 +536,8 @@
       await setDoc(doc(db, "budget", "einstellungen"), {
         name1: document.getElementById('name1').value,
         name2: document.getElementById('name2').value,
-        budget: document.getElementById('budget').value
+        budget: document.getElementById('budget').value,
+        vorlagen: customStores
       });
     } catch(e) {}
   }
@@ -502,6 +552,15 @@
     if (!laden) { alert('Bitte eingeben, wo eingekauft wurde.'); return; }
     if (!betragStr || isNaN(betrag) || betrag <= 0) { alert('Bitte einen gültigen Betrag eingeben.'); return; }
     var key = monatKey(aktJahr, aktMonat);
+    // Auto-add store to custom templates if it's new
+    var ladenLow = laden.toLowerCase();
+    if (!DEFAULT_STORES.some(function(s){return s.toLowerCase()===ladenLow;}) &&
+        !customStores.some(function(s){return s.toLowerCase()===ladenLow;})) {
+      customStores.push(laden);
+      customStores.sort(function(a,b){return a.localeCompare(b,'de');});
+      rebuildDatalist();
+      renderVorlagen();
+    }
     undoEinkauf = JSON.parse(JSON.stringify(alleData));
     editModeEinkauf = false;
     if (!alleData[key]) alleData[key] = [];
@@ -672,16 +731,18 @@
         var e = eintraege[j];
         var name = e.person === '1' ? n1() : n2();
         var farbe = e.person === '1' ? 'background:#ede9fe;color:#5b21b6' : 'background:#fce7f3;color:#9d174d';
+        var datStr = e.datum ? formatDatum(e.datum) : '';
         html += '<tr>'
-          + '<td style="padding:8px 4px 8px 2px;width:32px"><button class="del" onclick="bearbeiten(' + j + ')">✏️</button></td>'
-          + '<td><div style="font-weight:600">' + e.laden + '</div>'
-          + '<div style="font-size:0.78rem;color:#bbb;margin-top:2px;display:flex;gap:6px;align-items:center">'
-          + '<span>' + formatDatum(e.datum) + '</span>'
+          + '<td style="padding:10px 8px"><div style="font-weight:600;font-size:0.92rem">' + e.laden + '</div>'
+          + '<div style="font-size:0.78rem;color:#bbb;margin-top:3px;display:flex;gap:6px;align-items:center">'
+          + (datStr ? '<span>' + datStr + '</span>' : '')
           + '<span class="tag" style="' + farbe + '">' + name + '</span>'
           + '</div></td>'
-          + '<td style="text-align:right;font-weight:600;white-space:nowrap;padding-right:4px">' + euro(e.betrag) + '</td>'
-          + '<td style="padding:8px 2px 8px 4px;width:32px"><button class="del" onclick="loeschen(' + j + ')">✕</button></td>'
-          + '</tr>';
+          + '<td style="text-align:right;font-weight:700;white-space:nowrap;font-size:0.95rem;padding-right:8px">' + euro(e.betrag) + '</td>'
+          + '<td style="white-space:nowrap;padding-right:6px">'
+          + '<button class="btn-edit" onclick="bearbeiten(' + j + ')">✏️</button>'
+          + '<button class="btn-del" onclick="loeschen(' + j + ')">✕</button>'
+          + '</td></tr>';
       }
       liste.innerHTML = html;
     }
@@ -746,16 +807,17 @@
         var typLbl = e.typ === 'bestellen' ? '📦 Best.' : '🍽️ Gehen';
         var datStr = formatDatum(e.datum);
         html += '<tr>'
-          + '<td style="padding:8px 4px 8px 2px;width:32px"><button class="del" onclick="essenBearbeiten(' + j + ')">✏️</button></td>'
-          + '<td><div style="font-weight:600">' + (e.wo||'—') + '</div>'
-          + '<div style="font-size:0.78rem;color:#bbb;margin-top:2px;display:flex;gap:5px;align-items:center;flex-wrap:wrap">'
-          + '<span>' + datStr + '</span>'
+          + '<td style="padding:10px 8px"><div style="font-weight:600;font-size:0.92rem">' + (e.wo||'—') + '</div>'
+          + '<div style="font-size:0.78rem;color:#bbb;margin-top:3px;display:flex;gap:5px;align-items:center;flex-wrap:wrap">'
+          + (datStr ? '<span>' + datStr + '</span>' : '')
           + '<span class="essen-entry-typ ' + typCls + '">' + typLbl + '</span>'
           + '<span class="tag" style="' + pFarbe + '">' + name + '</span>'
           + '</div></td>'
-          + '<td style="text-align:right;font-weight:600;white-space:nowrap;padding-right:4px">' + euro(e.betrag) + '</td>'
-          + '<td style="padding:8px 2px 8px 4px;width:32px"><button class="del" onclick="essenLoeschen(' + j + ')">✕</button></td>'
-          + '</tr>';
+          + '<td style="text-align:right;font-weight:700;white-space:nowrap;font-size:0.95rem;padding-right:8px">' + euro(e.betrag) + '</td>'
+          + '<td style="white-space:nowrap;padding-right:6px">'
+          + '<button class="btn-edit" onclick="essenBearbeiten(' + j + ')">✏️</button>'
+          + '<button class="btn-del" onclick="essenLoeschen(' + j + ')">✕</button>'
+          + '</td></tr>';
       }
       liste.innerHTML = html;
     }
@@ -786,6 +848,9 @@
     }
   }
 
+  // ── Enter key on neue-vorlage
+  document.getElementById('neue-vorlage').addEventListener('keydown', function(e){ if(e.key==='Enter') vorlageHinzufuegen(); });
+
   // ── Settings persistence
   document.getElementById('name1').addEventListener('input', renderUI);
   document.getElementById('name2').addEventListener('input', renderUI);
@@ -801,9 +866,12 @@
       if (s.name1) document.getElementById('name1').value = s.name1;
       if (s.name2) document.getElementById('name2').value = s.name2;
       if (s.budget) document.getElementById('budget').value = s.budget;
+      if (Array.isArray(s.vorlagen)) customStores = s.vorlagen;
     } else {
       speichereEinstellungen();
     }
+    rebuildDatalist();
+    renderVorlagen();
     renderUI();
   });
 
@@ -822,6 +890,8 @@
     renderUI();
   });
 
+  rebuildDatalist();
+  renderVorlagen();
   renderUI();
 </script>
 </body>
