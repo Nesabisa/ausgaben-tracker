@@ -267,6 +267,7 @@
         <input id="e-datum-kauf" type="date" style="max-width:180px" />
         <select id="wer"></select>
         <button class="btn" id="btn-hinzu" onclick="hinzufuegen()">+ Eintragen</button>
+        <button id="btn-abbrechen-einkauf" onclick="abbrechenEinkauf()" style="display:none;padding:10px 14px;background:none;border:1.5px solid #e5e5e5;border-radius:10px;color:#aaa;cursor:pointer;font-size:0.88rem;white-space:nowrap">✕ Abbrechen</button>
       </div>
       <div id="undo-wrap-einkauf" style="display:none;margin-top:10px">
         <button onclick="rueckgaengig('einkauf')" style="width:100%;padding:10px;border:1.5px solid #6c63ff;border-radius:10px;background:#f5f3ff;color:#6c63ff;font-size:0.9rem;font-weight:600;cursor:pointer">↩ Rückgängig machen</button>
@@ -275,10 +276,7 @@
 
     <div class="card">
       <h2>Einkäufe diesen Monat</h2>
-      <table>
-        <thead><tr><th>Ort</th><th style="text-align:right">Betrag</th><th></th></tr></thead>
-        <tbody id="liste"></tbody>
-      </table>
+      <div id="liste"></div>
     </div>
 
     <div class="card">
@@ -334,7 +332,10 @@
         <button class="type-btn on" id="btn-gehen" onclick="setTyp('gehen')">🍽️ Essen gehen</button>
         <button class="type-btn" id="btn-bestellen" onclick="setTyp('bestellen')">📦 Bestellen</button>
       </div>
-      <button class="btn" onclick="essenHinzufuegen()" style="width:100%">+ Eintragen</button>
+      <div class="row" style="margin-top:0">
+        <button class="btn" id="btn-essen-hinzu" onclick="essenHinzufuegen()" style="flex:1">+ Eintragen</button>
+        <button id="btn-abbrechen-essen" onclick="abbrechenEssen()" style="display:none;padding:10px 14px;background:none;border:1.5px solid #e5e5e5;border-radius:10px;color:#aaa;cursor:pointer;font-size:0.88rem;white-space:nowrap">✕ Abbrechen</button>
+      </div>
       <div id="undo-wrap-essen" style="display:none;margin-top:10px">
         <button onclick="rueckgaengig('essen')" style="width:100%;padding:10px;border:1.5px solid #6c63ff;border-radius:10px;background:#f5f3ff;color:#6c63ff;font-size:0.9rem;font-weight:600;cursor:pointer">↩ Rückgängig machen</button>
       </div>
@@ -342,10 +343,7 @@
 
     <div class="card">
       <h2>Einträge diesen Monat</h2>
-      <table>
-        <thead><tr><th>Wo / Was</th><th style="text-align:right">Betrag</th><th></th></tr></thead>
-        <tbody id="essen-liste"></tbody>
-      </table>
+      <div id="essen-liste"></div>
     </div>
 
     <div class="card">
@@ -383,10 +381,14 @@
   var aktiverTab = 'einkauf';
 
   // ── Undo state
-  var undoEinkauf = null;    // snapshot of alleData before last mutation
-  var undoEssen = null;      // snapshot of essenData before last mutation
-  var editModeEinkauf = false; // true when bearbeiten() put values in form
+  var undoEinkauf = null;
+  var undoEssen = null;
+  var editModeEinkauf = false;
   var editModeEssen = false;
+
+  // ── Edit-mode index (null = adding new, number = editing existing row)
+  var editIndexEinkauf = null;
+  var editIndexEssen = null;
 
   // ── Store templates
   var DEFAULT_STORES = ['Aldi', 'Corner Store', 'Edeka', 'Lidl', 'Netto', 'Penny', 'Rewe'];
@@ -407,6 +409,13 @@
     var p = s.split('-');
     if (p.length !== 3) return s;
     return p[2] + '.' + p[1] + '.' + p[0].slice(2);
+  }
+  function formatDatumKurz(s) {
+    if (!s) return '';
+    var p = s.split('-');
+    if (p.length !== 3) return s;
+    var sameYear = parseInt(p[0]) === new Date().getFullYear();
+    return sameYear ? p[2] + '.' + p[1] + '.' : p[2] + '.' + p[1] + '.' + p[0].slice(2);
   }
 
   // ── Store template helpers
@@ -564,7 +573,15 @@
     undoEinkauf = JSON.parse(JSON.stringify(alleData));
     editModeEinkauf = false;
     if (!alleData[key]) alleData[key] = [];
-    alleData[key].push({ laden, betrag, person, datum, ts: Date.now() });
+    var newEntry = { laden: laden, betrag: betrag, person: person, datum: datum, ts: Date.now() };
+    if (editIndexEinkauf !== null) {
+      alleData[key][editIndexEinkauf] = newEntry;
+      editIndexEinkauf = null;
+      document.getElementById('btn-hinzu').textContent = '+ Eintragen';
+      document.getElementById('btn-abbrechen-einkauf').style.display = 'none';
+    } else {
+      alleData[key].push(newEntry);
+    }
     document.getElementById('laden').value = '';
     document.getElementById('betrag').value = '';
     document.getElementById('e-datum-kauf').value = heute_str();
@@ -574,29 +591,34 @@
   };
 
   // ── Edit/Delete grocery
-  window.bearbeiten = async function(index) {
+  window.bearbeiten = function(index) {
     var key = monatKey(aktJahr, aktMonat);
     var e = alleData[key][index];
-    // Save undo state BEFORE removing the entry
-    undoEinkauf = JSON.parse(JSON.stringify(alleData));
-    editModeEinkauf = true;
-    // Fill form
+    editIndexEinkauf = index;
     document.getElementById('laden').value = e.laden;
-    document.getElementById('betrag').value = e.betrag;
+    document.getElementById('betrag').value = String(e.betrag).replace('.', ',');
     document.getElementById('wer').value = e.person;
     document.getElementById('e-datum-kauf').value = e.datum || heute_str();
-    // Remove entry from local data + Firebase
-    alleData[key].splice(index, 1);
-    renderUI();
-    updateUndoBtns();
-    await speichern();
+    document.getElementById('btn-hinzu').textContent = '💾 Speichern';
+    document.getElementById('btn-abbrechen-einkauf').style.display = '';
+    renderEinkauf();
     document.getElementById('laden').focus();
+  };
+  window.abbrechenEinkauf = function() {
+    editIndexEinkauf = null;
+    document.getElementById('laden').value = '';
+    document.getElementById('betrag').value = '';
+    document.getElementById('e-datum-kauf').value = heute_str();
+    document.getElementById('btn-hinzu').textContent = '+ Eintragen';
+    document.getElementById('btn-abbrechen-einkauf').style.display = 'none';
+    renderEinkauf();
   };
   window.loeschen = async function(index) {
     var key = monatKey(aktJahr, aktMonat);
     if (alleData[key]) {
+      if (editIndexEinkauf === index) abbrechenEinkauf();
+      else if (editIndexEinkauf !== null && editIndexEinkauf > index) editIndexEinkauf--;
       undoEinkauf = JSON.parse(JSON.stringify(alleData));
-      editModeEinkauf = false;
       alleData[key].splice(index, 1);
       renderUI();
       updateUndoBtns();
@@ -617,7 +639,15 @@
     undoEssen = JSON.parse(JSON.stringify(essenData));
     editModeEssen = false;
     if (!essenData[key]) essenData[key] = [];
-    essenData[key].push({ wo, betrag, person, datum, typ: aktiverTyp, ts: Date.now() });
+    var newEntry = { wo: wo, betrag: betrag, person: person, datum: datum, typ: aktiverTyp, ts: Date.now() };
+    if (editIndexEssen !== null) {
+      essenData[key][editIndexEssen] = newEntry;
+      editIndexEssen = null;
+      document.getElementById('btn-essen-hinzu').textContent = '+ Eintragen';
+      document.getElementById('btn-abbrechen-essen').style.display = 'none';
+    } else {
+      essenData[key].push(newEntry);
+    }
     document.getElementById('e-wo').value = '';
     document.getElementById('e-betrag').value = '';
     document.getElementById('e-datum').value = heute_str();
@@ -627,30 +657,35 @@
   };
 
   // ── Edit/Delete essen
-  window.essenBearbeiten = async function(index) {
+  window.essenBearbeiten = function(index) {
     var key = monatKey(aktJahr, aktMonat);
     var e = essenData[key][index];
-    // Save undo state BEFORE removing the entry
-    undoEssen = JSON.parse(JSON.stringify(essenData));
-    editModeEssen = true;
-    // Fill form
+    editIndexEssen = index;
     document.getElementById('e-wo').value = e.wo;
-    document.getElementById('e-betrag').value = e.betrag;
+    document.getElementById('e-betrag').value = String(e.betrag).replace('.', ',');
     document.getElementById('e-datum').value = e.datum || heute_str();
     document.getElementById('e-wer').value = e.person;
     setTyp(e.typ || 'gehen');
-    // Remove entry from local data + Firebase
-    essenData[key].splice(index, 1);
-    renderUI();
-    updateUndoBtns();
-    await speichereEssen();
+    document.getElementById('btn-essen-hinzu').textContent = '💾 Speichern';
+    document.getElementById('btn-abbrechen-essen').style.display = '';
+    renderEssen();
     document.getElementById('e-wo').focus();
+  };
+  window.abbrechenEssen = function() {
+    editIndexEssen = null;
+    document.getElementById('e-wo').value = '';
+    document.getElementById('e-betrag').value = '';
+    document.getElementById('e-datum').value = heute_str();
+    document.getElementById('btn-essen-hinzu').textContent = '+ Eintragen';
+    document.getElementById('btn-abbrechen-essen').style.display = 'none';
+    renderEssen();
   };
   window.essenLoeschen = async function(index) {
     var key = monatKey(aktJahr, aktMonat);
     if (essenData[key]) {
+      if (editIndexEssen === index) abbrechenEssen();
+      else if (editIndexEssen !== null && editIndexEssen > index) editIndexEssen--;
       undoEssen = JSON.parse(JSON.stringify(essenData));
-      editModeEssen = false;
       essenData[key].splice(index, 1);
       renderUI();
       updateUndoBtns();
@@ -724,25 +759,23 @@
     // Liste
     var liste = document.getElementById('liste');
     if (eintraege.length === 0) {
-      liste.innerHTML = '<tr><td colspan="4" class="leer">Noch keine Einkäufe.</td></tr>';
+      liste.innerHTML = '<div class="leer">Noch keine Einkäufe.</div>';
     } else {
       var html = '';
       for (var j = eintraege.length - 1; j >= 0; j--) {
         var e = eintraege[j];
-        var name = e.person === '1' ? n1() : n2();
-        var farbe = e.person === '1' ? 'background:#ede9fe;color:#5b21b6' : 'background:#fce7f3;color:#9d174d';
-        var datStr = e.datum ? formatDatum(e.datum) : '';
-        html += '<tr>'
-          + '<td style="padding:10px 8px"><div style="font-weight:600;font-size:0.92rem">' + e.laden + '</div>'
-          + '<div style="font-size:0.78rem;color:#bbb;margin-top:3px;display:flex;gap:6px;align-items:center">'
-          + (datStr ? '<span>' + datStr + '</span>' : '')
-          + '<span class="tag" style="' + farbe + '">' + name + '</span>'
-          + '</div></td>'
-          + '<td style="text-align:right;font-weight:700;white-space:nowrap;font-size:0.95rem;padding-right:8px">' + euro(e.betrag) + '</td>'
-          + '<td style="white-space:nowrap;padding-right:6px">'
+        var init = (e.person === '1' ? n1() : n2()).charAt(0).toUpperCase();
+        var initFarbe = e.person === '1' ? 'background:#ede9fe;color:#5b21b6' : 'background:#fce7f3;color:#9d174d';
+        var datKurz = formatDatumKurz(e.datum);
+        var editBorder = editIndexEinkauf === j ? 'border-left:3px solid #6c63ff;background:#faf9ff;padding-left:9px;border-radius:8px;' : '';
+        html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 4px;border-bottom:1px solid #f5f5f5;' + editBorder + '">'
+          + '<div style="flex:1;font-weight:600;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + e.laden + '</div>'
+          + (datKurz ? '<div style="font-size:0.75rem;color:#bbb;flex-shrink:0">' + datKurz + '</div>' : '')
+          + '<div style="width:24px;height:24px;border-radius:50%;' + initFarbe + ';font-size:0.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + init + '</div>'
+          + '<div style="font-weight:700;font-size:0.9rem;white-space:nowrap;flex-shrink:0">' + euro(e.betrag) + '</div>'
           + '<button class="btn-edit" onclick="bearbeiten(' + j + ')">✏️</button>'
           + '<button class="btn-del" onclick="loeschen(' + j + ')">✕</button>'
-          + '</td></tr>';
+          + '</div>';
       }
       liste.innerHTML = html;
     }
@@ -796,28 +829,28 @@
     // Liste
     var liste = document.getElementById('essen-liste');
     if (eintraege.length === 0) {
-      liste.innerHTML = '<tr><td colspan="5" class="leer">Noch keine Einträge.</td></tr>';
+      liste.innerHTML = '<div class="leer">Noch keine Einträge.</div>';
     } else {
       var html = '';
       for (var j = eintraege.length - 1; j >= 0; j--) {
         var e = eintraege[j];
-        var name = e.person === '1' ? n1() : e.person === '2' ? n2() : 'Beide';
-        var pFarbe = e.person === '1' ? 'background:#ede9fe;color:#5b21b6' : e.person === '2' ? 'background:#fce7f3;color:#9d174d' : 'background:#fef3c7;color:#92400e';
-        var typCls = e.typ === 'bestellen' ? 'best' : 'aus';
-        var typLbl = e.typ === 'bestellen' ? '📦 Best.' : '🍽️ Gehen';
-        var datStr = formatDatum(e.datum);
-        html += '<tr>'
-          + '<td style="padding:10px 8px"><div style="font-weight:600;font-size:0.92rem">' + (e.wo||'—') + '</div>'
-          + '<div style="font-size:0.78rem;color:#bbb;margin-top:3px;display:flex;gap:5px;align-items:center;flex-wrap:wrap">'
-          + (datStr ? '<span>' + datStr + '</span>' : '')
-          + '<span class="essen-entry-typ ' + typCls + '">' + typLbl + '</span>'
-          + '<span class="tag" style="' + pFarbe + '">' + name + '</span>'
-          + '</div></td>'
-          + '<td style="text-align:right;font-weight:700;white-space:nowrap;font-size:0.95rem;padding-right:8px">' + euro(e.betrag) + '</td>'
-          + '<td style="white-space:nowrap;padding-right:6px">'
+        var init = e.person === '1' ? n1().charAt(0).toUpperCase()
+                 : e.person === '2' ? n2().charAt(0).toUpperCase() : '✌';
+        var initFarbe = e.person === '1' ? 'background:#ede9fe;color:#5b21b6'
+                      : e.person === '2' ? 'background:#fce7f3;color:#9d174d'
+                      : 'background:#fef3c7;color:#92400e';
+        var typIcon = e.typ === 'bestellen' ? '📦' : '🍽️';
+        var datKurz = formatDatumKurz(e.datum);
+        var editBorder = editIndexEssen === j ? 'border-left:3px solid #f97316;background:#fff7f0;padding-left:9px;border-radius:8px;' : '';
+        html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 4px;border-bottom:1px solid #f5f5f5;' + editBorder + '">'
+          + '<div style="font-size:1rem;flex-shrink:0">' + typIcon + '</div>'
+          + '<div style="flex:1;font-weight:600;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (e.wo||'—') + '</div>'
+          + (datKurz ? '<div style="font-size:0.75rem;color:#bbb;flex-shrink:0">' + datKurz + '</div>' : '')
+          + '<div style="width:24px;height:24px;border-radius:50%;' + initFarbe + ';font-size:0.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + init + '</div>'
+          + '<div style="font-weight:700;font-size:0.9rem;white-space:nowrap;flex-shrink:0">' + euro(e.betrag) + '</div>'
           + '<button class="btn-edit" onclick="essenBearbeiten(' + j + ')">✏️</button>'
           + '<button class="btn-del" onclick="essenLoeschen(' + j + ')">✕</button>'
-          + '</td></tr>';
+          + '</div>';
       }
       liste.innerHTML = html;
     }
