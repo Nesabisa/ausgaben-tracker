@@ -245,6 +245,7 @@
         <input id="betrag" type="text" inputmode="decimal" placeholder="z.B. 12,50" style="max-width:130px" />
       </div>
       <div class="row">
+        <input id="e-datum-kauf" type="date" style="max-width:180px" />
         <select id="wer"></select>
         <button class="btn" id="btn-hinzu" onclick="hinzufuegen()">+ Eintragen</button>
       </div>
@@ -253,7 +254,7 @@
     <div class="card">
       <h2>Einkäufe diesen Monat</h2>
       <table>
-        <thead><tr><th>Ort</th><th>Wer</th><th>Betrag</th><th></th></tr></thead>
+        <thead><tr><th>Ort</th><th>Datum</th><th>Wer</th><th>Betrag</th><th></th></tr></thead>
         <tbody id="liste"></tbody>
       </table>
     </div>
@@ -431,13 +432,15 @@
     var betragStr = document.getElementById('betrag').value.replace(',', '.');
     var betrag = parseFloat(betragStr);
     var person = document.getElementById('wer').value;
+    var datum = document.getElementById('e-datum-kauf').value || heute_str();
     if (!laden) { alert('Bitte eingeben, wo eingekauft wurde.'); return; }
     if (!betragStr || isNaN(betrag) || betrag <= 0) { alert('Bitte einen gültigen Betrag eingeben.'); return; }
     var key = monatKey(aktJahr, aktMonat);
     if (!alleData[key]) alleData[key] = [];
-    alleData[key].push({ laden, betrag, person, ts: Date.now() });
+    alleData[key].push({ laden, betrag, person, datum, ts: Date.now() });
     document.getElementById('laden').value = '';
     document.getElementById('betrag').value = '';
+    document.getElementById('e-datum-kauf').value = heute_str();
     renderUI();
     await speichern();
   };
@@ -449,6 +452,7 @@
     document.getElementById('laden').value = e.laden;
     document.getElementById('betrag').value = e.betrag;
     document.getElementById('wer').value = e.person;
+    document.getElementById('e-datum-kauf').value = e.datum || heute_str();
     alleData[key].splice(index, 1);
     renderUI();
     await speichern();
@@ -516,8 +520,9 @@
     esel.innerHTML = '<option value="1">' + n1() + '</option><option value="2">' + n2() + '</option><option value="beide">Beide</option>';
     if (eselVal) esel.value = eselVal;
 
-    // Set today as default for essen date if empty
+    // Set today as default for dates if empty
     if (!document.getElementById('e-datum').value) document.getElementById('e-datum').value = heute_str();
+    if (!document.getElementById('e-datum-kauf').value) document.getElementById('e-datum-kauf').value = heute_str();
 
     document.getElementById('b-name1').textContent = n1();
     document.getElementById('b-name2').textContent = n2();
@@ -568,7 +573,8 @@
         var e = eintraege[j];
         var name = e.person === '1' ? n1() : n2();
         var farbe = e.person === '1' ? 'background:#ede9fe;color:#5b21b6' : 'background:#fce7f3;color:#9d174d';
-        html += '<tr><td>' + e.laden + '</td>'
+        html += '<tr><td><div style="font-weight:600">' + e.laden + '</div></td>'
+          + '<td style="font-size:0.82rem;color:#bbb;white-space:nowrap">' + formatDatum(e.datum) + '</td>'
           + '<td><span class="tag" style="' + farbe + '">' + name + '</span></td>'
           + '<td>' + euro(e.betrag) + '</td>'
           + '<td style="white-space:nowrap"><button class="del" onclick="bearbeiten(' + j + ')" style="margin-right:4px">✏️</button><button class="del" onclick="loeschen(' + j + ')">✕</button></td></tr>';
