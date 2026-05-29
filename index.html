@@ -251,8 +251,8 @@
     <div class="card">
       <h2>Einkauf eintragen</h2>
       <div class="row" style="margin-bottom:10px">
-        <input id="laden" list="laden-list" type="text" placeholder="Wo? (z.B. Rewe, Aldi…)" />
-        <datalist id="laden-list"></datalist>
+        <select id="laden-select" onchange="ladenSelectChange()" style="flex:1;min-width:120px"></select>
+        <input id="laden-custom" type="text" placeholder="Ort eingeben…" style="display:none;flex:1;min-width:120px" />
         <input id="betrag" type="text" inputmode="decimal" placeholder="z.B. 12,50" style="max-width:130px" />
       </div>
       <div class="row">
@@ -410,12 +410,37 @@
     return sameYear ? p[2] + '.' + p[1] + '.' : p[2] + '.' + p[1] + '.' + p[0].slice(2);
   }
 
-  // ── Store template helpers
-  function rebuildDatalist() {
-    var dl = document.getElementById('laden-list');
-    if (!dl) return;
+  // ── Store dropdown helpers
+  function rebuildLadenOptions() {
+    var sel = document.getElementById('laden-select');
+    if (!sel) return;
+    var prev = sel.value;
     var all = DEFAULT_STORES.concat(customStores).sort(function(a,b){ return a.localeCompare(b,'de'); });
-    dl.innerHTML = all.map(function(s){ return '<option value="' + s + '">'; }).join('');
+    var html = '<option value="">Wo eingekauft?</option>';
+    all.forEach(function(s){ html += '<option value="' + s + '">' + s + '</option>'; });
+    html += '<option value="__custom__">✏️ Anderer Ort…</option>';
+    sel.innerHTML = html;
+    if (prev) sel.value = prev;
+  }
+  function rebuildDatalist() { rebuildLadenOptions(); } // alias for old call sites
+
+  window.ladenSelectChange = function() {
+    var isCustom = document.getElementById('laden-select').value === '__custom__';
+    var ci = document.getElementById('laden-custom');
+    ci.style.display = isCustom ? '' : 'none';
+    if (isCustom) ci.focus();
+  };
+
+  function getLaden() {
+    var sel = document.getElementById('laden-select');
+    if (sel.value === '__custom__') return (document.getElementById('laden-custom').value || '').trim();
+    return sel.value;
+  }
+
+  function resetLadenForm() {
+    document.getElementById('laden-select').value = '';
+    document.getElementById('laden-custom').value = '';
+    document.getElementById('laden-custom').style.display = 'none';
   }
 
 
@@ -510,7 +535,7 @@
 
   // ── Add grocery entry
   window.hinzufuegen = async function() {
-    var laden = document.getElementById('laden').value.trim();
+    var laden = getLaden();
     var betragStr = document.getElementById('betrag').value.replace(',', '.');
     var betrag = parseFloat(betragStr);
     var person = document.getElementById('wer').value;
@@ -518,14 +543,13 @@
     if (!laden) { alert('Bitte eingeben, wo eingekauft wurde.'); return; }
     if (!betragStr || isNaN(betrag) || betrag <= 0) { alert('Bitte einen gültigen Betrag eingeben.'); return; }
     var key = monatKey(aktJahr, aktMonat);
-    // Auto-add store to custom templates if it's new
+    // Auto-add custom store to dropdown if new
     var ladenLow = laden.toLowerCase();
     if (!DEFAULT_STORES.some(function(s){return s.toLowerCase()===ladenLow;}) &&
         !customStores.some(function(s){return s.toLowerCase()===ladenLow;})) {
       customStores.push(laden);
       customStores.sort(function(a,b){return a.localeCompare(b,'de');});
-      rebuildDatalist();
-      renderVorlagen();
+      rebuildLadenOptions();
     }
     undoEinkauf = JSON.parse(JSON.stringify(alleData));
     editModeEinkauf = false;
@@ -539,7 +563,7 @@
     } else {
       alleData[key].push(newEntry);
     }
-    document.getElementById('laden').value = '';
+    resetLadenForm();
     document.getElementById('betrag').value = '';
     document.getElementById('e-datum-kauf').value = heute_str();
     renderUI();
@@ -552,18 +576,26 @@
     var key = monatKey(aktJahr, aktMonat);
     var e = alleData[key][index];
     editIndexEinkauf = index;
-    document.getElementById('laden').value = e.laden;
+    // Fill select or custom input depending on whether store is in the list
+    var allStores = DEFAULT_STORES.concat(customStores);
+    if (allStores.indexOf(e.laden) >= 0) {
+      document.getElementById('laden-select').value = e.laden;
+      document.getElementById('laden-custom').style.display = 'none';
+    } else {
+      document.getElementById('laden-select').value = '__custom__';
+      document.getElementById('laden-custom').value = e.laden;
+      document.getElementById('laden-custom').style.display = '';
+    }
     document.getElementById('betrag').value = String(e.betrag).replace('.', ',');
     document.getElementById('wer').value = e.person;
     document.getElementById('e-datum-kauf').value = e.datum || heute_str();
     document.getElementById('btn-hinzu').textContent = '💾 Speichern';
     document.getElementById('btn-abbrechen-einkauf').style.display = '';
     renderEinkauf();
-    document.getElementById('laden').focus();
   };
   window.abbrechenEinkauf = function() {
     editIndexEinkauf = null;
-    document.getElementById('laden').value = '';
+    resetLadenForm();
     document.getElementById('betrag').value = '';
     document.getElementById('e-datum-kauf').value = heute_str();
     document.getElementById('btn-hinzu').textContent = '+ Eintragen';
