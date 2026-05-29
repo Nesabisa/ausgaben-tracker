@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ausgaben Tracker</title>
+  <title>Expense Tracker</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -183,7 +183,7 @@
 
     /* ALIGNED ENTRY TABLE */
     .eintrag-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .eintrag-table td { padding: 10px 4px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; overflow: hidden; }
+    .eintrag-table td { padding: 8px 4px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; overflow: hidden; }
     .eintrag-table tr:last-child td { border-bottom: none; }
     .eintrag-table .col-name { font-weight: 600; font-size: 0.9rem; white-space: nowrap; text-overflow: ellipsis; }
     .eintrag-table .col-dat  { width: 44px; font-size: 0.75rem; color: #bbb; white-space: nowrap; }
@@ -199,18 +199,18 @@
 </head>
 <body>
 <div class="container">
-  <h1>🛒 Ausgaben Tracker</h1>
-  <div id="sync-status">Verbinde...</div>
+  <h1>🛒 Expense Tracker</h1>
+  <div id="sync-status">Connecting...</div>
 
   <!-- Shared: Settings -->
   <div class="card">
-    <h2>Einstellungen</h2>
+    <h2>Settings</h2>
     <div class="row" style="margin-bottom:10px">
       <input id="name1" type="text" placeholder="Name 1" maxlength="20" value="Pedro" />
       <input id="name2" type="text" placeholder="Name 2" maxlength="20" value="Sabine" />
     </div>
     <div class="row" style="align-items:center;margin-bottom:14px">
-      <label style="font-size:0.9rem;color:#666;white-space:nowrap">Monatsbudget Einkäufe:</label>
+      <label style="font-size:0.9rem;color:#666;white-space:nowrap">Monthly grocery budget:</label>
       <input id="budget" type="number" value="600" min="1" step="10" style="max-width:110px" />
       <span style="color:#999;font-size:0.9rem">€</span>
     </div>
@@ -225,26 +225,26 @@
 
   <!-- Tab bar -->
   <div class="tab-bar">
-    <button class="tab-btn active" id="tab-einkauf" onclick="switchTab('einkauf')">🛒 Einkäufe</button>
-    <button class="tab-btn" id="tab-essen" onclick="switchTab('essen')">🍽️ Ausgehen & Bestellen</button>
+    <button class="tab-btn active" id="tab-einkauf" onclick="switchTab('einkauf')">🛒 Groceries</button>
+    <button class="tab-btn" id="tab-essen" onclick="switchTab('essen')">🍽️ Eating Out</button>
   </div>
 
   <!-- PANEL: EINKÄUFE -->
   <div id="panel-einkauf">
     <div class="card">
-      <h2>Budget-Übersicht</h2>
+      <h2>Budget Overview</h2>
       <div class="budget-zahlen">
         <div>
-          <div class="klein">Ausgegeben</div>
+          <div class="klein">Spent</div>
           <div class="gross" id="summe-anzeige">0,00 €</div>
         </div>
         <div style="text-align:right">
-          <div class="klein">Verbleibend</div>
+          <div class="klein">Remaining</div>
           <div class="rest" id="rest-anzeige">600,00 €</div>
         </div>
       </div>
       <div class="balken-bg"><div class="balken" id="balken" style="width:0%"></div></div>
-      <div class="status-text" id="status-text">Noch kein Einkauf.</div>
+      <div class="status-text" id="status-text">No purchases yet.</div>
       <div class="beitraege">
         <div class="beitrag-box">
           <div class="p-name" id="b-name1">Person 1</div>
@@ -260,31 +260,31 @@
     </div>
 
     <div class="card">
-      <h2>Einkauf eintragen</h2>
+      <h2>Add Purchase</h2>
       <div class="row" style="margin-bottom:10px">
         <select id="laden-select" onchange="ladenSelectChange()" style="flex:1;min-width:120px"></select>
-        <input id="laden-custom" type="text" placeholder="Ort eingeben…" style="display:none;flex:1;min-width:120px" />
-        <input id="betrag" type="text" inputmode="decimal" placeholder="z.B. 12,50" style="max-width:130px" />
+        <input id="laden-custom" type="text" placeholder="Enter store name…" style="display:none;flex:1;min-width:120px" />
+        <input id="betrag" type="text" inputmode="decimal" placeholder="e.g. 12,50" style="max-width:130px" />
       </div>
       <div class="row">
         <input id="e-datum-kauf" type="date" style="max-width:180px" />
         <select id="wer"></select>
-        <button class="btn" id="btn-hinzu" onclick="hinzufuegen()">+ Eintragen</button>
-        <button id="btn-abbrechen-einkauf" onclick="abbrechenEinkauf()" style="display:none;padding:10px 14px;background:none;border:1.5px solid #e5e5e5;border-radius:10px;color:#aaa;cursor:pointer;font-size:0.88rem;white-space:nowrap">✕ Abbrechen</button>
+        <button class="btn" id="btn-hinzu" onclick="hinzufuegen()">+ Add</button>
+        <button id="btn-abbrechen-einkauf" onclick="abbrechenEinkauf()" style="display:none;padding:10px 14px;background:none;border:1.5px solid #e5e5e5;border-radius:10px;color:#aaa;cursor:pointer;font-size:0.88rem;white-space:nowrap">✕ Cancel</button>
       </div>
       <div id="undo-wrap-einkauf" style="display:none;margin-top:10px">
-        <button onclick="rueckgaengig('einkauf')" style="width:100%;padding:10px;border:1.5px solid #6c63ff;border-radius:10px;background:#f5f3ff;color:#6c63ff;font-size:0.9rem;font-weight:600;cursor:pointer">↩ Rückgängig machen</button>
+        <button onclick="rueckgaengig('einkauf')" style="width:100%;padding:10px;border:1.5px solid #6c63ff;border-radius:10px;background:#f5f3ff;color:#6c63ff;font-size:0.9rem;font-weight:600;cursor:pointer">↩ Undo</button>
       </div>
     </div>
 
     <div class="card">
-      <h2>Einkäufe diesen Monat</h2>
+      <h2>This month's purchases</h2>
       <table class="eintrag-table"><tbody id="liste"></tbody></table>
     </div>
 
     <div class="card">
-      <h2>Alle Monate – Einkäufe</h2>
-      <div id="verlauf-liste"><div class="leer">Noch keine Daten.</div></div>
+      <h2>All months – Groceries</h2>
+      <div id="verlauf-liste"><div class="leer">No data yet.</div></div>
     </div>
   </div>
 
@@ -292,18 +292,18 @@
   <div id="panel-essen" style="display:none">
 
     <div class="card">
-      <h2>Diesen Monat</h2>
+      <h2>This Month</h2>
       <div class="essen-summary">
         <div class="essen-box">
-          <div class="eb-lbl">Gesamt</div>
+          <div class="eb-lbl">Total</div>
           <div class="eb-val" id="e-gesamt">0,00 €</div>
         </div>
         <div class="essen-box">
-          <div class="eb-lbl">🍽️ Gehen</div>
+          <div class="eb-lbl">🍽️ Dining</div>
           <div class="eb-val" id="e-gehen">0,00 €</div>
         </div>
         <div class="essen-box">
-          <div class="eb-lbl">📦 Bestellen</div>
+          <div class="eb-lbl">📦 Delivery</div>
           <div class="eb-val" id="e-bestellen">0,00 €</div>
         </div>
       </div>
@@ -322,36 +322,36 @@
     </div>
 
     <div class="card">
-      <h2>Eintrag hinzufügen</h2>
+      <h2>Add Entry</h2>
       <div class="row" style="margin-bottom:10px">
-        <input id="e-wo" type="text" placeholder="Wo / Was? (z.B. Vapiano, Lieferando…)" />
-        <input id="e-betrag" type="text" inputmode="decimal" placeholder="z.B. 34,00" style="max-width:130px" />
+        <input id="e-wo" type="text" placeholder="Where / What? (e.g. Vapiano, Deliveroo…)" />
+        <input id="e-betrag" type="text" inputmode="decimal" placeholder="e.g. 34,00" style="max-width:130px" />
       </div>
       <div class="row" style="margin-bottom:10px">
         <input id="e-datum" type="date" style="max-width:180px" />
         <select id="e-wer"></select>
       </div>
       <div class="type-row" style="margin-bottom:10px">
-        <button class="type-btn on" id="btn-gehen" onclick="setTyp('gehen')">🍽️ Essen gehen</button>
-        <button class="type-btn" id="btn-bestellen" onclick="setTyp('bestellen')">📦 Bestellen</button>
+        <button class="type-btn on" id="btn-gehen" onclick="setTyp('gehen')">🍽️ Dining out</button>
+        <button class="type-btn" id="btn-bestellen" onclick="setTyp('bestellen')">📦 Delivery</button>
       </div>
       <div class="row" style="margin-top:0">
-        <button class="btn" id="btn-essen-hinzu" onclick="essenHinzufuegen()" style="flex:1">+ Eintragen</button>
-        <button id="btn-abbrechen-essen" onclick="abbrechenEssen()" style="display:none;padding:10px 14px;background:none;border:1.5px solid #e5e5e5;border-radius:10px;color:#aaa;cursor:pointer;font-size:0.88rem;white-space:nowrap">✕ Abbrechen</button>
+        <button class="btn" id="btn-essen-hinzu" onclick="essenHinzufuegen()" style="flex:1">+ Add</button>
+        <button id="btn-abbrechen-essen" onclick="abbrechenEssen()" style="display:none;padding:10px 14px;background:none;border:1.5px solid #e5e5e5;border-radius:10px;color:#aaa;cursor:pointer;font-size:0.88rem;white-space:nowrap">✕ Cancel</button>
       </div>
       <div id="undo-wrap-essen" style="display:none;margin-top:10px">
-        <button onclick="rueckgaengig('essen')" style="width:100%;padding:10px;border:1.5px solid #6c63ff;border-radius:10px;background:#f5f3ff;color:#6c63ff;font-size:0.9rem;font-weight:600;cursor:pointer">↩ Rückgängig machen</button>
+        <button onclick="rueckgaengig('essen')" style="width:100%;padding:10px;border:1.5px solid #6c63ff;border-radius:10px;background:#f5f3ff;color:#6c63ff;font-size:0.9rem;font-weight:600;cursor:pointer">↩ Undo</button>
       </div>
     </div>
 
     <div class="card">
-      <h2>Einträge diesen Monat</h2>
+      <h2>This month's entries</h2>
       <table class="eintrag-table"><tbody id="essen-liste"></tbody></table>
     </div>
 
     <div class="card">
-      <h2>Alle Monate – Ausgehen & Bestellen</h2>
-      <div id="essen-verlauf"><div class="leer">Noch keine Daten.</div></div>
+      <h2>All months – Eating Out</h2>
+      <div id="essen-verlauf"><div class="leer">No data yet.</div></div>
     </div>
   </div>
 
@@ -373,7 +373,7 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const MONATE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  const MONATE = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
   var heute = new Date();
   var aktJahr = heute.getFullYear();
@@ -427,9 +427,9 @@
     if (!sel) return;
     var prev = sel.value;
     var all = DEFAULT_STORES.concat(customStores).sort(function(a,b){ return a.localeCompare(b,'de'); });
-    var html = '<option value="">Wo eingekauft?</option>';
+    var html = '<option value="">Where?</option>';
     all.forEach(function(s){ html += '<option value="' + s + '">' + s + '</option>'; });
-    html += '<option value="__custom__">✏️ Anderer Ort…</option>';
+    html += '<option value="__custom__">✏️ Other store…</option>';
     sel.innerHTML = html;
     if (prev) sel.value = prev;
   }
@@ -521,7 +521,7 @@
     try {
       await setDoc(doc(db, "budget", "daten"), alleData);
     } catch(e) {
-      document.getElementById('sync-status').textContent = 'Fehler beim Speichern';
+      document.getElementById('sync-status').textContent = 'Save error';
       document.getElementById('sync-status').className = 'fehler';
     }
   }
@@ -529,7 +529,7 @@
     try {
       await setDoc(doc(db, "budget", "essen_daten"), essenData);
     } catch(e) {
-      document.getElementById('sync-status').textContent = 'Fehler beim Speichern';
+      document.getElementById('sync-status').textContent = 'Save error';
       document.getElementById('sync-status').className = 'fehler';
     }
   }
@@ -551,8 +551,8 @@
     var betrag = parseFloat(betragStr);
     var person = document.getElementById('wer').value;
     var datum = document.getElementById('e-datum-kauf').value || heute_str();
-    if (!laden) { alert('Bitte eingeben, wo eingekauft wurde.'); return; }
-    if (!betragStr || isNaN(betrag) || betrag <= 0) { alert('Bitte einen gültigen Betrag eingeben.'); return; }
+    if (!laden) { alert('Please enter where you shopped.'); return; }
+    if (!betragStr || isNaN(betrag) || betrag <= 0) { alert('Please enter a valid amount.'); return; }
     var key = monatKey(aktJahr, aktMonat);
     // Auto-add custom store to dropdown if new
     var ladenLow = laden.toLowerCase();
@@ -569,7 +569,7 @@
     if (editIndexEinkauf !== null) {
       alleData[key][editIndexEinkauf] = newEntry;
       editIndexEinkauf = null;
-      document.getElementById('btn-hinzu').textContent = '+ Eintragen';
+      document.getElementById('btn-hinzu').textContent = '+ Add';
       document.getElementById('btn-abbrechen-einkauf').style.display = 'none';
     } else {
       alleData[key].push(newEntry);
@@ -600,7 +600,7 @@
     document.getElementById('betrag').value = String(e.betrag).replace('.', ',');
     document.getElementById('wer').value = e.person;
     document.getElementById('e-datum-kauf').value = e.datum || heute_str();
-    document.getElementById('btn-hinzu').textContent = '💾 Speichern';
+    document.getElementById('btn-hinzu').textContent = '💾 Save';
     document.getElementById('btn-abbrechen-einkauf').style.display = '';
     renderEinkauf();
   };
@@ -609,7 +609,7 @@
     resetLadenForm();
     document.getElementById('betrag').value = '';
     document.getElementById('e-datum-kauf').value = heute_str();
-    document.getElementById('btn-hinzu').textContent = '+ Eintragen';
+    document.getElementById('btn-hinzu').textContent = '+ Add';
     document.getElementById('btn-abbrechen-einkauf').style.display = 'none';
     renderEinkauf();
   };
@@ -633,8 +633,8 @@
     var betrag = parseFloat(betragStr);
     var datum = document.getElementById('e-datum').value || heute_str();
     var person = document.getElementById('e-wer').value;
-    if (!wo) { alert('Bitte eingeben, wo gegessen / bestellt wurde.'); return; }
-    if (!betragStr || isNaN(betrag) || betrag <= 0) { alert('Bitte einen gültigen Betrag eingeben.'); return; }
+    if (!wo) { alert('Please enter where you ate / ordered.'); return; }
+    if (!betragStr || isNaN(betrag) || betrag <= 0) { alert('Please enter a valid amount.'); return; }
     var key = monatKey(aktJahr, aktMonat);
     undoEssen = JSON.parse(JSON.stringify(essenData));
     editModeEssen = false;
@@ -643,7 +643,7 @@
     if (editIndexEssen !== null) {
       essenData[key][editIndexEssen] = newEntry;
       editIndexEssen = null;
-      document.getElementById('btn-essen-hinzu').textContent = '+ Eintragen';
+      document.getElementById('btn-essen-hinzu').textContent = '+ Add';
       document.getElementById('btn-abbrechen-essen').style.display = 'none';
     } else {
       essenData[key].push(newEntry);
@@ -666,7 +666,7 @@
     document.getElementById('e-datum').value = e.datum || heute_str();
     document.getElementById('e-wer').value = e.person;
     setTyp(e.typ || 'gehen');
-    document.getElementById('btn-essen-hinzu').textContent = '💾 Speichern';
+    document.getElementById('btn-essen-hinzu').textContent = '💾 Save';
     document.getElementById('btn-abbrechen-essen').style.display = '';
     renderEssen();
     document.getElementById('e-wo').focus();
@@ -676,7 +676,7 @@
     document.getElementById('e-wo').value = '';
     document.getElementById('e-betrag').value = '';
     document.getElementById('e-datum').value = heute_str();
-    document.getElementById('btn-essen-hinzu').textContent = '+ Eintragen';
+    document.getElementById('btn-essen-hinzu').textContent = '+ Add';
     document.getElementById('btn-abbrechen-essen').style.display = 'none';
     renderEssen();
   };
@@ -709,7 +709,7 @@
     sel.innerHTML = '<option value="1">' + n1() + '</option><option value="2">' + n2() + '</option>';
     if (selVal) sel.value = selVal;
     var esel = document.getElementById('e-wer'), eselVal = esel.value;
-    esel.innerHTML = '<option value="1">' + n1() + '</option><option value="2">' + n2() + '</option><option value="beide">Beide</option>';
+    esel.innerHTML = '<option value="1">' + n1() + '</option><option value="2">' + n2() + '</option><option value="beide">Both</option>';
     if (eselVal) esel.value = eselVal;
 
     // Set today as default for dates if empty
@@ -742,13 +742,13 @@
     balken.style.width = prozent + '%';
     var statusEl = document.getElementById('status-text');
     if (eintraege.length === 0) {
-      balken.className = 'balken'; statusEl.textContent = 'Noch kein Einkauf eingetragen.'; statusEl.className = 'status-text';
+      balken.className = 'balken'; statusEl.textContent = 'No purchases yet.'; statusEl.className = 'status-text';
     } else if (gesamt > bud) {
-      balken.className = 'balken drueber'; statusEl.textContent = '⚠️ Budget überschritten um ' + euro(gesamt - bud) + '!'; statusEl.className = 'status-text drueber';
+      balken.className = 'balken drueber'; statusEl.textContent = '⚠️ Budget exceeded by ' + euro(gesamt - bud) + '!'; statusEl.className = 'status-text drueber';
     } else if (prozent >= 80) {
-      balken.className = 'balken mittel'; statusEl.textContent = 'Fast aufgebraucht — noch ' + euro(rest) + ' übrig.'; statusEl.className = 'status-text mittel';
+      balken.className = 'balken mittel'; statusEl.textContent = 'Almost used up — ' + euro(rest) + ' left.'; statusEl.className = 'status-text mittel';
     } else {
-      balken.className = 'balken'; statusEl.textContent = 'Gut im Budget — noch ' + euro(rest) + ' übrig.'; statusEl.className = 'status-text';
+      balken.className = 'balken'; statusEl.textContent = 'On budget — ' + euro(rest) + ' left.'; statusEl.className = 'status-text';
     }
 
     document.getElementById('b-betrag1').textContent = euro(sum1);
@@ -759,7 +759,7 @@
     // Liste
     var liste = document.getElementById('liste');
     if (eintraege.length === 0) {
-      liste.innerHTML = '<tr><td colspan="5" class="leer">Noch keine Einkäufe.</td></tr>';
+      liste.innerHTML = '<tr><td colspan="5" class="leer">No purchases yet.</td></tr>';
     } else {
       var html = '';
       for (var j = eintraege.length - 1; j >= 0; j--) {
@@ -784,7 +784,7 @@
     alleKeys.sort().reverse();
     var bud2 = budget();
     if (alleKeys.length === 0) {
-      document.getElementById('verlauf-liste').innerHTML = '<div class="leer">Noch keine Daten aus anderen Monaten.</div>';
+      document.getElementById('verlauf-liste').innerHTML = '<div class="leer">No data from other months yet.</div>';
     } else {
       var vhtml = '';
       alleKeys.forEach(function(mk2) {
@@ -828,7 +828,7 @@
     // Liste
     var liste = document.getElementById('essen-liste');
     if (eintraege.length === 0) {
-      liste.innerHTML = '<tr><td colspan="6" class="leer">Noch keine Einträge.</td></tr>';
+      liste.innerHTML = '<tr><td colspan="6" class="leer">No entries yet.</td></tr>';
     } else {
       var html = '';
       for (var j = eintraege.length - 1; j >= 0; j--) {
@@ -857,7 +857,7 @@
     var alleEKeys = Object.keys(essenData).filter(function(k) { return essenData[k] && essenData[k].length > 0; });
     alleEKeys.sort().reverse();
     if (alleEKeys.length === 0) {
-      document.getElementById('essen-verlauf').innerHTML = '<div class="leer">Noch keine Daten aus anderen Monaten.</div>';
+      document.getElementById('essen-verlauf').innerHTML = '<div class="leer">No data from other months yet.</div>';
     } else {
       var vhtml = '';
       var maxE = Math.max.apply(null, alleEKeys.map(function(k) {
@@ -905,10 +905,10 @@
   onSnapshot(doc(db, "budget", "daten"), function(snapshot) {
     alleData = snapshot.exists() ? snapshot.data() : {};
     renderUI();
-    document.getElementById('sync-status').textContent = '● Verbunden — Änderungen werden sofort synchronisiert';
+    document.getElementById('sync-status').textContent = '● Connected — changes sync instantly';
     document.getElementById('sync-status').className = 'ok';
   }, function(error) {
-    document.getElementById('sync-status').textContent = 'Verbindungsfehler: ' + error.message;
+    document.getElementById('sync-status').textContent = 'Connection error: ' + error.message;
     document.getElementById('sync-status').className = 'fehler';
   });
 
