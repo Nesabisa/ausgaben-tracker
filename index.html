@@ -203,14 +203,6 @@
       <input id="budget" type="number" value="600" min="1" step="10" style="max-width:110px" />
       <span style="color:#999;font-size:0.9rem">€</span>
     </div>
-    <div style="border-top:1px solid #f5f5f5;padding-top:12px">
-      <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.07em;color:#bbb;margin-bottom:8px">Eigene Ort-Vorlagen</div>
-      <div id="vorlagen-liste" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
-      <div class="row">
-        <input id="neue-vorlage" type="text" placeholder="Neuen Ort hinzufügen…" style="font-size:0.88rem" />
-        <button onclick="vorlageHinzufuegen()" class="btn" style="background:#f5f3ff;color:#6c63ff;border:1.5px solid #ede9fe;font-size:0.85rem;padding:9px 14px;white-space:nowrap">+ Hinzufügen</button>
-      </div>
-    </div>
   </div>
 
   <!-- Shared: Month nav -->
@@ -259,7 +251,7 @@
     <div class="card">
       <h2>Einkauf eintragen</h2>
       <div class="row" style="margin-bottom:10px">
-        <input id="laden" list="laden-list" type="text" placeholder="Wo? (z.B. Rewe, Aldi…)" autocomplete="off" />
+        <input id="laden" list="laden-list" type="text" placeholder="Wo? (z.B. Rewe, Aldi…)" />
         <datalist id="laden-list"></datalist>
         <input id="betrag" type="text" inputmode="decimal" placeholder="z.B. 12,50" style="max-width:130px" />
       </div>
@@ -426,41 +418,6 @@
     dl.innerHTML = all.map(function(s){ return '<option value="' + s + '">'; }).join('');
   }
 
-  function renderVorlagen() {
-    var el = document.getElementById('vorlagen-liste');
-    if (!el) return;
-    if (customStores.length === 0) {
-      el.innerHTML = '<span style="font-size:0.82rem;color:#ccc">Noch keine eigenen Orte hinzugefügt.</span>';
-      return;
-    }
-    el.innerHTML = customStores.map(function(s, i) {
-      return '<span class="vorlage-chip">' + s
-        + '<button onclick="vorlageLoeschen(' + i + ')" title="Entfernen">×</button></span>';
-    }).join('');
-  }
-
-  window.vorlageHinzufuegen = function() {
-    var input = document.getElementById('neue-vorlage');
-    var name = (input.value || '').trim();
-    if (!name) return;
-    var low = name.toLowerCase();
-    if (DEFAULT_STORES.some(function(s){ return s.toLowerCase()===low; })) { input.value=''; return; }
-    if (!customStores.some(function(s){ return s.toLowerCase()===low; })) {
-      customStores.push(name);
-      customStores.sort(function(a,b){ return a.localeCompare(b,'de'); });
-      rebuildDatalist();
-      renderVorlagen();
-      speichereEinstellungen();
-    }
-    input.value = '';
-  };
-
-  window.vorlageLoeschen = function(index) {
-    customStores.splice(index, 1);
-    rebuildDatalist();
-    renderVorlagen();
-    speichereEinstellungen();
-  };
 
   // ── Undo helpers
   function updateUndoBtns() {
@@ -881,9 +838,6 @@
     }
   }
 
-  // ── Enter key on neue-vorlage
-  document.getElementById('neue-vorlage').addEventListener('keydown', function(e){ if(e.key==='Enter') vorlageHinzufuegen(); });
-
   // ── Settings persistence
   document.getElementById('name1').addEventListener('input', renderUI);
   document.getElementById('name2').addEventListener('input', renderUI);
@@ -904,7 +858,6 @@
       speichereEinstellungen();
     }
     rebuildDatalist();
-    renderVorlagen();
     renderUI();
   });
 
@@ -924,7 +877,6 @@
   });
 
   rebuildDatalist();
-  renderVorlagen();
   renderUI();
 </script>
 </body>
