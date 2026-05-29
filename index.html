@@ -174,6 +174,24 @@
     .essen-entry-typ { padding: 2px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
     .essen-entry-typ.aus { background: #fff7ed; color: #c2410c; }
     .essen-entry-typ.best { background: #ede9fe; color: #5b21b6; }
+
+    /* UNDO BUTTON */
+    .card-hd-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .card-hd-row h2 { margin-bottom: 0; }
+    .undo-btn {
+      padding: 5px 13px;
+      border: 1.5px solid #e5e5e5;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: white;
+      color: #ccc;
+      transition: all .15s;
+    }
+    .undo-btn:not(:disabled):hover { border-color: #6c63ff; color: #6c63ff; background: #f5f3ff; }
+    .undo-btn:disabled { opacity: 0.4; cursor: default; }
+    .undo-btn.aktiv { border-color: #6c63ff; color: #6c63ff; background: #f5f3ff; }
   </style>
 </head>
 <body>
@@ -252,7 +270,10 @@
     </div>
 
     <div class="card">
-      <h2>Einkäufe diesen Monat</h2>
+      <div class="card-hd-row">
+        <h2>Einkäufe diesen Monat</h2>
+        <button class="undo-btn" id="undo-btn-einkauf" onclick="rueckgaengig('einkauf')" disabled>↩ Rückgängig</button>
+      </div>
       <table>
         <thead><tr><th>Ort</th><th>Datum</th><th>Wer</th><th>Betrag</th><th></th></tr></thead>
         <tbody id="liste"></tbody>
@@ -316,7 +337,10 @@
     </div>
 
     <div class="card">
-      <h2>Einträge diesen Monat</h2>
+      <div class="card-hd-row">
+        <h2>Einträge diesen Monat</h2>
+        <button class="undo-btn" id="undo-btn-essen" onclick="rueckgaengig('essen')" disabled>↩ Rückgängig</button>
+      </div>
       <table>
         <thead><tr><th>Wo / Was</th><th>Typ</th><th>Wer</th><th>Betrag</th><th></th></tr></thead>
         <tbody id="essen-liste"></tbody>
@@ -357,6 +381,12 @@
   var aktiverTyp = 'gehen';
   var aktiverTab = 'einkauf';
 
+  // ── Undo state
+  var undoEinkauf = null;    // snapshot of alleData before last mutation
+  var undoEssen = null;      // snapshot of essenData before last mutation
+  var editModeEinkauf = false; // true when bearbeiten() put values in form
+  var editModeEssen = false;
+
   // ── Helpers
   function n1() { return document.getElementById('name1').value.trim() || 'Person 1'; }
   function n2() { return document.getElementById('name2').value.trim() || 'Person 2'; }
@@ -373,6 +403,42 @@
     if (p.length !== 3) return s;
     return p[2] + '.' + p[1] + '.' + p[0].slice(2);
   }
+
+  // ── Undo helpers
+  function updateUndoBtns() {
+    var bE = document.getElementById('undo-btn-einkauf');
+    var bEs = document.getElementById('undo-btn-essen');
+    if (bE)  { bE.disabled  = !undoEinkauf; bE.classList.toggle('aktiv',  !!undoEinkauf); }
+    if (bEs) { bEs.disabled = !undoEssen;   bEs.classList.toggle('aktiv', !!undoEssen);   }
+  }
+
+  window.rueckgaengig = async function(tab) {
+    if (tab === 'einkauf' && undoEinkauf) {
+      alleData = undoEinkauf;
+      undoEinkauf = null;
+      if (editModeEinkauf) {
+        document.getElementById('laden').value = '';
+        document.getElementById('betrag').value = '';
+        document.getElementById('e-datum-kauf').value = heute_str();
+        editModeEinkauf = false;
+      }
+      renderUI();
+      updateUndoBtns();
+      await speichern();
+    } else if (tab === 'essen' && undoEssen) {
+      essenData = undoEssen;
+      undoEssen = null;
+      if (editModeEssen) {
+        document.getElementById('e-wo').value = '';
+        document.getElementById('e-betrag').value = '';
+        document.getElementById('e-datum').value = heute_str();
+        editModeEssen = false;
+      }
+      renderUI();
+      updateUndoBtns();
+      await speichereEssen();
+    }
+  };
 
   // ── Tab switching
   window.switchTab = function(tab) {
@@ -436,12 +502,15 @@
     if (!laden) { alert('Bitte eingeben, wo eingekauft wurde.'); return; }
     if (!betragStr || isNaN(betrag) || betrag <= 0) { alert('Bitte einen gültigen Betrag eingeben.'); return; }
     var key = monatKey(aktJahr, aktMonat);
+    undoEinkauf = JSON.parse(JSON.stringify(alleData));
+    editModeEinkauf = false;
     if (!alleData[key]) alleData[key] = [];
     alleData[key].push({ laden, betrag, person, datum, ts: Date.now() });
     document.getElementById('laden').value = '';
     document.getElementById('betrag').value = '';
     document.getElementById('e-datum-kauf').value = heute_str();
     renderUI();
+    updateUndoBtns();
     await speichern();
   };
 
@@ -449,18 +518,31 @@
   window.bearbeiten = async function(index) {
     var key = monatKey(aktJahr, aktMonat);
     var e = alleData[key][index];
+    // Save undo state BEFORE removing the entry
+    undoEinkauf = JSON.parse(JSON.stringify(alleData));
+    editModeEinkauf = true;
+    // Fill form
     document.getElementById('laden').value = e.laden;
     document.getElementById('betrag').value = e.betrag;
     document.getElementById('wer').value = e.person;
     document.getElementById('e-datum-kauf').value = e.datum || heute_str();
+    // Remove entry from local data + Firebase
     alleData[key].splice(index, 1);
     renderUI();
+    updateUndoBtns();
     await speichern();
     document.getElementById('laden').focus();
   };
   window.loeschen = async function(index) {
     var key = monatKey(aktJahr, aktMonat);
-    if (alleData[key]) { alleData[key].splice(index, 1); renderUI(); await speichern(); }
+    if (alleData[key]) {
+      undoEinkauf = JSON.parse(JSON.stringify(alleData));
+      editModeEinkauf = false;
+      alleData[key].splice(index, 1);
+      renderUI();
+      updateUndoBtns();
+      await speichern();
+    }
   };
 
   // ── Add essen entry
@@ -473,12 +555,15 @@
     if (!wo) { alert('Bitte eingeben, wo gegessen / bestellt wurde.'); return; }
     if (!betragStr || isNaN(betrag) || betrag <= 0) { alert('Bitte einen gültigen Betrag eingeben.'); return; }
     var key = monatKey(aktJahr, aktMonat);
+    undoEssen = JSON.parse(JSON.stringify(essenData));
+    editModeEssen = false;
     if (!essenData[key]) essenData[key] = [];
     essenData[key].push({ wo, betrag, person, datum, typ: aktiverTyp, ts: Date.now() });
     document.getElementById('e-wo').value = '';
     document.getElementById('e-betrag').value = '';
     document.getElementById('e-datum').value = heute_str();
     renderUI();
+    updateUndoBtns();
     await speichereEssen();
   };
 
@@ -486,19 +571,32 @@
   window.essenBearbeiten = async function(index) {
     var key = monatKey(aktJahr, aktMonat);
     var e = essenData[key][index];
+    // Save undo state BEFORE removing the entry
+    undoEssen = JSON.parse(JSON.stringify(essenData));
+    editModeEssen = true;
+    // Fill form
     document.getElementById('e-wo').value = e.wo;
     document.getElementById('e-betrag').value = e.betrag;
     document.getElementById('e-datum').value = e.datum || heute_str();
     document.getElementById('e-wer').value = e.person;
     setTyp(e.typ || 'gehen');
+    // Remove entry from local data + Firebase
     essenData[key].splice(index, 1);
     renderUI();
+    updateUndoBtns();
     await speichereEssen();
     document.getElementById('e-wo').focus();
   };
   window.essenLoeschen = async function(index) {
     var key = monatKey(aktJahr, aktMonat);
-    if (essenData[key]) { essenData[key].splice(index, 1); renderUI(); await speichereEssen(); }
+    if (essenData[key]) {
+      undoEssen = JSON.parse(JSON.stringify(essenData));
+      editModeEssen = false;
+      essenData[key].splice(index, 1);
+      renderUI();
+      updateUndoBtns();
+      await speichereEssen();
+    }
   };
 
   // ── Navigate to month
@@ -531,6 +629,7 @@
 
     renderEinkauf();
     renderEssen();
+    updateUndoBtns();
   }
 
   function renderEinkauf() {
