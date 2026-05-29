@@ -490,7 +490,8 @@
         + '<button class="laden-opt-del" onclick="event.stopPropagation();vorlageLoeschen(' + i + ')" title="Remove">×</button>'
         + '</div>';
     });
-    html += '<div class="laden-opt other-opt" onclick="selectLaden(\'__custom__\')">✏️ Other store…</div>';
+    html += '<div class="laden-opt other-opt" onclick="selectLaden(\'__other__\')" style="border-top:1px solid #f0edff">Other store</div>';
+    html += '<div class="laden-opt other-opt" onclick="selectLaden(\'__add__\')" style="font-style:normal;color:#6c63ff;font-weight:600">+ Add store</div>';
     dd.innerHTML = html;
   }
   function rebuildDatalist() { rebuildLadenOptions(); }
@@ -514,8 +515,11 @@
     if (value === '' || value == null) {
       display.textContent = 'Where?'; display.className = 'laden-trigger-text';
       custom.style.display = 'none';
-    } else if (value === '__custom__') {
-      display.textContent = 'Other store…'; display.className = 'laden-trigger-text has-value';
+    } else if (value === '__other__') {
+      display.textContent = 'Other store'; display.className = 'laden-trigger-text has-value';
+      custom.style.display = ''; custom.focus();
+    } else if (value === '__add__') {
+      display.textContent = '+ Add store'; display.className = 'laden-trigger-text has-value';
       custom.style.display = ''; custom.focus();
     } else {
       display.textContent = value; display.className = 'laden-trigger-text has-value';
@@ -559,7 +563,8 @@
   };
 
   function getLaden() {
-    if (selectedLaden === '__custom__') return (document.getElementById('laden-custom').value || '').trim();
+    if (selectedLaden === '__other__' || selectedLaden === '__add__')
+      return (document.getElementById('laden-custom').value || '').trim();
     return selectedLaden;
   }
 
@@ -672,15 +677,17 @@
     if (!laden) { alert('Please enter where you shopped.'); return; }
     if (!betragStr || isNaN(betrag) || betrag <= 0) { alert('Please enter a valid amount.'); return; }
     var key = monatKey(aktJahr, aktMonat);
-    // Auto-add custom store to dropdown if new
-    var ladenLow = laden.toLowerCase();
-    if (!DEFAULT_STORES.some(function(s){return s.toLowerCase()===ladenLow;}) &&
-        !customStores.some(function(s){return s.toLowerCase()===ladenLow;})) {
-      customStores.push(laden);
-      customStores.sort(function(a,b){return a.localeCompare(b,'de');});
-      rebuildLadenOptions();
-      renderVorlagen();
-      speichereEinstellungen();
+    // Save to dropdown only when user explicitly chose "+ Add store"
+    if (selectedLaden === '__add__') {
+      var ladenLow = laden.toLowerCase();
+      if (!DEFAULT_STORES.some(function(s){return s.toLowerCase()===ladenLow;}) &&
+          !customStores.some(function(s){return s.toLowerCase()===ladenLow;})) {
+        customStores.push(laden);
+        customStores.sort(function(a,b){return a.localeCompare(b,'de');});
+        rebuildLadenOptions();
+        renderVorlagen();
+        speichereEinstellungen();
+      }
     }
     undoEinkauf = JSON.parse(JSON.stringify(alleData));
     editModeEinkauf = false;
@@ -712,7 +719,7 @@
     if (allStores.indexOf(e.laden) >= 0) {
       selectLaden(e.laden);
     } else {
-      selectLaden('__custom__');
+      selectLaden('__other__');
       document.getElementById('laden-custom').value = e.laden;
     }
     document.getElementById('betrag').value = String(e.betrag).replace('.', ',');
