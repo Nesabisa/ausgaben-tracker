@@ -6,8 +6,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <!-- VERSION: v2024.06.10 - Change this to force cache refresh -->
-  <meta name="app-version" content="v2024.06.10" />
+  <!-- VERSION: v2024.06.11 - Change this to force cache refresh -->
+  <meta name="app-version" content="v2024.06.11" />
   <title>Expense Tracker</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -423,27 +423,19 @@
   <!-- PANEL: STATISTICS -->
   <div id="panel-stats" style="display:none">
     <div class="card">
-      <h2>Total Overview</h2>
-      <div class="essen-summary" style="grid-template-columns: 1fr 1fr">
+      <h2>Current Month</h2>
+      <div class="essen-summary">
         <div class="essen-box">
-          <div class="eb-lbl">Total All Time</div>
-          <div class="eb-val" id="s-total-all">0,00 €</div>
-        </div>
-        <div class="essen-box">
-          <div class="eb-lbl">Current Month</div>
+          <div class="eb-lbl">Total</div>
           <div class="eb-val" id="s-total-month">0,00 €</div>
         </div>
-      </div>
-      <div class="beitraege">
-        <div class="beitrag-box">
+        <div class="essen-box">
           <div class="p-name" id="s-name1">Person 1</div>
-          <div class="p-betrag" id="s-betrag1-all">0,00 €</div>
-          <div class="p-anteil" style="font-size:0.72rem;color:#9e98bf">All time</div>
+          <div class="p-betrag" id="s-betrag1-month">0,00 €</div>
         </div>
-        <div class="beitrag-box">
+        <div class="essen-box">
           <div class="p-name" id="s-name2">Person 2</div>
-          <div class="p-betrag" id="s-betrag2-all">0,00 €</div>
-          <div class="p-anteil" style="font-size:0.72rem;color:#9e98bf">All time</div>
+          <div class="p-betrag" id="s-betrag2-month">0,00 €</div>
         </div>
       </div>
     </div>
@@ -530,7 +522,7 @@
 
 <script type="module">
   // Version-based cache buster
-  const currentVersion = 'v2024.06.10';
+  const currentVersion = 'v2024.06.11';
   const storedVersion = localStorage.getItem('app-version');
 
   if (storedVersion !== currentVersion) {
@@ -1427,28 +1419,12 @@
   }
 
   function renderStatistics() {
-    // Gather all months
+    // Gather all months for monthly breakdown
     var allMonths = new Set();
     Object.keys(alleData).forEach(k => allMonths.add(k));
     Object.keys(essenData).forEach(k => allMonths.add(k));
     Object.keys(autoData).forEach(k => allMonths.add(k));
     var monthsArray = Array.from(allMonths).sort().reverse();
-
-    // Calculate all-time totals
-    var total1AllTime = 0, total2AllTime = 0;
-    monthsArray.forEach(function(mk) {
-      var einkauf = alleData[mk] || [];
-      var essen = essenData[mk] || [];
-      var auto = autoData[mk] || [];
-      var all = einkauf.concat(essen).concat(auto);
-      all.forEach(function(e) {
-        var b = e.betrag || 0;
-        if (e.person === '1') total1AllTime += b;
-        else if (e.person === '2') total2AllTime += b;
-        else { total1AllTime += b/2; total2AllTime += b/2; }
-      });
-    });
-    var totalAllTime = total1AllTime + total2AllTime;
 
     // Current month totals
     var key = monatKey(aktJahr, aktMonat);
@@ -1465,12 +1441,11 @@
     });
     var totalMonth = total1Month + total2Month;
 
-    document.getElementById('s-total-all').textContent = euro(totalAllTime);
     document.getElementById('s-total-month').textContent = euro(totalMonth);
     document.getElementById('s-name1').textContent = n1();
     document.getElementById('s-name2').textContent = n2();
-    document.getElementById('s-betrag1-all').textContent = euro(total1AllTime);
-    document.getElementById('s-betrag2-all').textContent = euro(total2AllTime);
+    document.getElementById('s-betrag1-month').textContent = euro(total1Month);
+    document.getElementById('s-betrag2-month').textContent = euro(total2Month);
 
     // Monthly breakdown
     if (monthsArray.length === 0) {
