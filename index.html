@@ -283,6 +283,7 @@
     <button class="tab-btn active" id="tab-einkauf" onclick="switchTab('einkauf')">🛒 Groceries</button>
     <button class="tab-btn" id="tab-essen" onclick="switchTab('essen')">🍽️ Eating Out</button>
     <button class="tab-btn" id="tab-auto" onclick="switchTab('auto')">🚗 Auto</button>
+    <button class="tab-btn" id="tab-stats" onclick="switchTab('stats')">📊 Stats</button>
   </div>
 
   <!-- PANEL: EINKÄUFE -->
@@ -414,6 +415,45 @@
     <div class="card">
       <h2>All months – Eating Out</h2>
       <div id="essen-verlauf"><div class="leer">No data yet.</div></div>
+    </div>
+  </div>
+
+  <!-- PANEL: STATISTICS -->
+  <div id="panel-stats" style="display:none">
+    <div class="card">
+      <h2>Total Overview</h2>
+      <div class="essen-summary" style="grid-template-columns: 1fr 1fr">
+        <div class="essen-box">
+          <div class="eb-lbl">Total All Time</div>
+          <div class="eb-val" id="s-total-all">0,00 €</div>
+        </div>
+        <div class="essen-box">
+          <div class="eb-lbl">Current Month</div>
+          <div class="eb-val" id="s-total-month">0,00 €</div>
+        </div>
+      </div>
+      <div class="beitraege">
+        <div class="beitrag-box">
+          <div class="p-name" id="s-name1">Person 1</div>
+          <div class="p-betrag" id="s-betrag1-all">0,00 €</div>
+          <div class="p-anteil" style="font-size:0.72rem;color:#9e98bf">All time</div>
+        </div>
+        <div class="beitrag-box">
+          <div class="p-name" id="s-name2">Person 2</div>
+          <div class="p-betrag" id="s-betrag2-all">0,00 €</div>
+          <div class="p-anteil" style="font-size:0.72rem;color:#9e98bf">All time</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Monthly Breakdown</h2>
+      <div id="stats-monthly"><div class="leer">No data yet.</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Current Month Details</h2>
+      <table class="eintrag-table"><tbody id="stats-month-table"></tbody></table>
     </div>
   </div>
 
@@ -733,9 +773,11 @@
     document.getElementById('panel-einkauf').style.display = tab === 'einkauf' ? '' : 'none';
     document.getElementById('panel-essen').style.display = tab === 'essen' ? '' : 'none';
     document.getElementById('panel-auto').style.display = tab === 'auto' ? '' : 'none';
+    document.getElementById('panel-stats').style.display = tab === 'stats' ? '' : 'none';
     document.getElementById('tab-einkauf').classList.toggle('active', tab === 'einkauf');
     document.getElementById('tab-essen').classList.toggle('active', tab === 'essen');
     document.getElementById('tab-auto').classList.toggle('active', tab === 'auto');
+    document.getElementById('tab-stats').classList.toggle('active', tab === 'stats');
     renderUI();
   };
 
@@ -1135,6 +1177,7 @@
     renderEinkauf();
     renderEssen();
     renderAuto();
+    renderStatistics();
     updateUndoBtns();
   }
 
@@ -1361,6 +1404,128 @@
           + '</div>';
       });
       document.getElementById('auto-verlauf').innerHTML = vhtml;
+    }
+  }
+
+  function renderStatistics() {
+    // Gather all months
+    var allMonths = new Set();
+    Object.keys(alleData).forEach(k => allMonths.add(k));
+    Object.keys(essenData).forEach(k => allMonths.add(k));
+    Object.keys(autoData).forEach(k => allMonths.add(k));
+    var monthsArray = Array.from(allMonths).sort().reverse();
+
+    // Calculate all-time totals
+    var total1AllTime = 0, total2AllTime = 0;
+    monthsArray.forEach(function(mk) {
+      var einkauf = alleData[mk] || [];
+      var essen = essenData[mk] || [];
+      var auto = autoData[mk] || [];
+      var all = einkauf.concat(essen).concat(auto);
+      all.forEach(function(e) {
+        var b = e.betrag || 0;
+        if (e.person === '1') total1AllTime += b;
+        else if (e.person === '2') total2AllTime += b;
+        else { total1AllTime += b/2; total2AllTime += b/2; }
+      });
+    });
+    var totalAllTime = total1AllTime + total2AllTime;
+
+    // Current month totals
+    var key = monatKey(aktJahr, aktMonat);
+    var einkauf = alleData[key] || [];
+    var essen = essenData[key] || [];
+    var auto = autoData[key] || [];
+    var all = einkauf.concat(essen).concat(auto);
+    var total1Month = 0, total2Month = 0;
+    all.forEach(function(e) {
+      var b = e.betrag || 0;
+      if (e.person === '1') total1Month += b;
+      else if (e.person === '2') total2Month += b;
+      else { total1Month += b/2; total2Month += b/2; }
+    });
+    var totalMonth = total1Month + total2Month;
+
+    document.getElementById('s-total-all').textContent = euro(totalAllTime);
+    document.getElementById('s-total-month').textContent = euro(totalMonth);
+    document.getElementById('s-name1').textContent = n1();
+    document.getElementById('s-name2').textContent = n2();
+    document.getElementById('s-betrag1-all').textContent = euro(total1AllTime);
+    document.getElementById('s-betrag2-all').textContent = euro(total2AllTime);
+
+    // Monthly breakdown
+    if (monthsArray.length === 0) {
+      document.getElementById('stats-monthly').innerHTML = '<div class="leer">No data yet.</div>';
+    } else {
+      var html = '<table style="width:100%;border-collapse:collapse;font-size:0.9rem">';
+      html += '<tr style="border-bottom:1.5px solid #f2f2f2"><th style="text-align:left;padding:7px 0;color:#ccc;font-weight:600">Month</th>';
+      html += '<th style="text-align:right;padding:7px 0;color:#ccc;font-weight:600">' + n1() + '</th>';
+      html += '<th style="text-align:right;padding:7px 0;color:#ccc;font-weight:600">' + n2() + '</th>';
+      html += '<th style="text-align:right;padding:7px 0;color:#ccc;font-weight:600">Total</th></tr>';
+
+      monthsArray.forEach(function(mk) {
+        var parts = mk.split('-'), mj = parseInt(parts[0]), mm = parseInt(parts[1]);
+        var eink = alleData[mk] || [];
+        var ess = essenData[mk] || [];
+        var au = autoData[mk] || [];
+        var allM = eink.concat(ess).concat(au);
+        var m1 = 0, m2 = 0;
+        allM.forEach(function(e) {
+          var b = e.betrag || 0;
+          if (e.person === '1') m1 += b;
+          else if (e.person === '2') m2 += b;
+          else { m1 += b/2; m2 += b/2; }
+        });
+        var mTotal = m1 + m2;
+        var isCurrent = (mj === aktJahr && mm === aktMonat);
+        var bgStyle = isCurrent ? 'background:#f5f3ff' : '';
+        html += '<tr style="border-bottom:1px solid #f5f5f5;' + bgStyle + '"><td style="padding:10px 0;font-weight:600">' + MONATE[mm] + ' ' + mj + '</td>';
+        html += '<td style="padding:10px 0;text-align:right">' + euro(m1) + '</td>';
+        html += '<td style="padding:10px 0;text-align:right">' + euro(m2) + '</td>';
+        html += '<td style="padding:10px 0;text-align:right;font-weight:700">' + euro(mTotal) + '</td></tr>';
+      });
+      html += '</table>';
+      document.getElementById('stats-monthly').innerHTML = html;
+    }
+
+    // Current month details by category
+    var mtable = document.getElementById('stats-month-table');
+    if (all.length === 0) {
+      mtable.innerHTML = '<tr><td colspan="5" class="leer">No entries this month.</td></tr>';
+    } else {
+      var mhtml = '';
+      var grocTotal1 = 0, grocTotal2 = 0;
+      var eatTotal1 = 0, eatTotal2 = 0;
+      var autoTotal1 = 0, autoTotal2 = 0;
+
+      einkauf.forEach(function(e) {
+        if (e.person === '1') grocTotal1 += e.betrag; else grocTotal2 += e.betrag;
+      });
+      essen.forEach(function(e) {
+        if (e.person === '1') eatTotal1 += e.betrag;
+        else if (e.person === '2') eatTotal2 += e.betrag;
+        else { eatTotal1 += e.betrag/2; eatTotal2 += e.betrag/2; }
+      });
+      auto.forEach(function(e) {
+        if (e.person === '1') autoTotal1 += e.betrag;
+        else if (e.person === '2') autoTotal2 += e.betrag;
+        else { autoTotal1 += e.betrag/2; autoTotal2 += e.betrag/2; }
+      });
+
+      mhtml += '<tr><td class="col-name">🛒 Groceries</td><td class="col-dat"></td><td class="col-who"></td><td class="col-amt">' + euro(grocTotal1 + grocTotal2) + '</td><td></td></tr>';
+      mhtml += '<tr style="background:#f9f9f9"><td class="col-name" style="padding-left:20px">→ ' + n1() + '</td><td></td><td></td><td class="col-amt">' + euro(grocTotal1) + '</td><td></td></tr>';
+      mhtml += '<tr style="background:#f9f9f9"><td class="col-name" style="padding-left:20px">→ ' + n2() + '</td><td></td><td></td><td class="col-amt">' + euro(grocTotal2) + '</td><td></td></tr>';
+
+      mhtml += '<tr><td class="col-name">🍽️ Eating Out</td><td class="col-dat"></td><td class="col-who"></td><td class="col-amt">' + euro(eatTotal1 + eatTotal2) + '</td><td></td></tr>';
+      mhtml += '<tr style="background:#fef7f0"><td class="col-name" style="padding-left:20px">→ ' + n1() + '</td><td></td><td></td><td class="col-amt">' + euro(eatTotal1) + '</td><td></td></tr>';
+      mhtml += '<tr style="background:#fef7f0"><td class="col-name" style="padding-left:20px">→ ' + n2() + '</td><td></td><td></td><td class="col-amt">' + euro(eatTotal2) + '</td><td></td></tr>';
+
+      mhtml += '<tr><td class="col-name">🚗 Auto</td><td class="col-dat"></td><td class="col-who"></td><td class="col-amt">' + euro(autoTotal1 + autoTotal2) + '</td><td></td></tr>';
+      mhtml += '<tr style="background:#f0fdf4"><td class="col-name" style="padding-left:20px">→ ' + n1() + '</td><td></td><td></td><td class="col-amt">' + euro(autoTotal1) + '</td><td></td></tr>';
+      mhtml += '<tr style="background:#f0fdf4"><td class="col-name" style="padding-left:20px">→ ' + n2() + '</td><td></td><td></td><td class="col-amt">' + euro(autoTotal2) + '</td><td></td></tr>';
+
+      mhtml += '<tr style="border-top:1.5px solid #f2f2f2;font-weight:700"><td class="col-name">TOTAL</td><td></td><td></td><td class="col-amt">' + euro(total1Month + total2Month) + '</td><td></td></tr>';
+      mtable.innerHTML = mhtml;
     }
   }
 
