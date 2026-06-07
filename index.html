@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
+  <!-- VERSION: v2024.06.7 - Change this to force cache refresh -->
+  <meta name="app-version" content="v2024.06.7" />
   <title>Expense Tracker</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -527,23 +529,30 @@
 </div>
 
 <script type="module">
-  // Aggressive PWA cache buster - unregister ALL service workers
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-      for(let registration of registrations) {
-        registration.unregister().catch(e => console.log('unregister error:', e));
-        // Also try to clear the cache
-        caches.keys().then(cacheNames => {
-          cacheNames.forEach(cacheName => {
-            caches.delete(cacheName);
-          });
+  // Version-based cache buster
+  const currentVersion = 'v2024.06.7';
+  const storedVersion = localStorage.getItem('app-version');
+
+  if (storedVersion !== currentVersion) {
+    localStorage.setItem('app-version', currentVersion);
+    // Unregister all service workers
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.unregister().catch(e => {});
+        }
+      }).catch(e => {});
+    }
+    // Clear all caches
+    if ('caches' in window) {
+      caches.keys().then(cacheNames => {
+        cacheNames.forEach(cacheName => {
+          caches.delete(cacheName).catch(e => {});
         });
-      }
-    }).catch(e => {});
-  }
-  // Force hard refresh on load
-  if (!window.location.hash.includes('nocache')) {
-    window.location.hash = 'nocache=' + Date.now();
+      }).catch(e => {});
+    }
+    // Hard refresh
+    window.location.reload(true);
   }
 
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.0/firebase-app.js";
