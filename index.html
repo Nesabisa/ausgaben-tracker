@@ -460,7 +460,7 @@
           </button>
           <div class="laden-dropdown" id="auto-typ-dropdown"></div>
         </div>
-        <input id="auto-custom" type="text" placeholder="Enter type…" style="display:none;flex:1;min-width:120px" />
+        <input id="auto-custom" type="text" placeholder="Enter type..." style="display:none;flex:1;min-width:120px" />
         <input id="a-betrag" type="text" inputmode="decimal" placeholder="e.g. 45,00" style="max-width:130px" />
       </div>
       <div class="row">
@@ -541,7 +541,7 @@
   var customStores = [];
 
   // ── Auto types
-  var DEFAULT_AUTO_TYPES = ['⛽ Tanken', '🅿️ Parken', '🔧 Wartung', '📋 Versicherung'];
+  var DEFAULT_AUTO_TYPES = ['⛽ Fuel', '🅿️ Parking', '🔧 Maintenance', '📋 Insurance'];
   var customAutoTypes = [];
   var selectedAutoTyp = '';
 
@@ -773,7 +773,7 @@
         + '<button class="laden-opt-del" onclick="event.stopPropagation();autoTypDelBtnClicked(' + i + ')" title="Remove">×</button>'
         + '</div>';
     });
-    html += '<div class="laden-opt other-opt" onclick="selectAutoTyp(\'__add__\')" style="border-top:1px solid #f0edff;color:#6c63ff;font-weight:600">+ Add type</div>';
+    html += '<div class="laden-opt other-opt" onclick="selectAutoTyp(\'__add__\')" style="border-top:1px solid #f0edff;color:#6c63ff;font-weight:600">+ Add type…</div>';
     dd.innerHTML = html;
   }
 
@@ -797,7 +797,7 @@
       display.textContent = 'Type?'; display.className = 'laden-trigger-text';
       custom.style.display = 'none';
     } else if (value === '__add__') {
-      display.textContent = '+ Add type'; display.className = 'laden-trigger-text has-value';
+      display.textContent = '+ Add type…'; display.className = 'laden-trigger-text has-value';
       custom.style.display = ''; custom.focus();
     } else {
       display.textContent = value; display.className = 'laden-trigger-text has-value';
@@ -1300,7 +1300,7 @@
       if (e.person === '1') sum1 += b;
       else if (e.person === '2') sum2 += b;
       else { sum1 += b/2; sum2 += b/2; }
-      if (e.typ && e.typ.includes('Tanken')) sumTanken += b; else sumSonstiges += b;
+      if (e.typ && e.typ.includes('Fuel')) sumTanken += b; else sumSonstiges += b;
     });
     var gesamt = eintraege.reduce(function(s,e) { return s+(e.betrag||0); }, 0);
 
