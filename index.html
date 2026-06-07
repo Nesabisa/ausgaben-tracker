@@ -279,6 +279,7 @@
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-einkauf" onclick="switchTab('einkauf')">🛒 Groceries</button>
     <button class="tab-btn" id="tab-essen" onclick="switchTab('essen')">🍽️ Eating Out</button>
+    <button class="tab-btn" id="tab-auto" onclick="switchTab('auto')">🚗 Auto</button>
   </div>
 
   <!-- PANEL: EINKÄUFE -->
@@ -413,6 +414,73 @@
     </div>
   </div>
 
+  <!-- PANEL: AUTO -->
+  <div id="panel-auto" style="display:none">
+
+    <div class="card">
+      <h2>This Month</h2>
+      <div class="essen-summary">
+        <div class="essen-box">
+          <div class="eb-lbl">Total</div>
+          <div class="eb-val" id="a-gesamt">0,00 €</div>
+        </div>
+        <div class="essen-box">
+          <div class="eb-lbl">⛽ Fuel</div>
+          <div class="eb-val" id="a-tanken">0,00 €</div>
+        </div>
+        <div class="essen-box">
+          <div class="eb-lbl">🅿️ Other</div>
+          <div class="eb-val" id="a-sonstiges">0,00 €</div>
+        </div>
+      </div>
+      <div class="beitraege">
+        <div class="beitrag-box">
+          <div class="p-name" id="a-name1">Person 1</div>
+          <div class="p-betrag" id="a-betrag1">0,00 €</div>
+          <div class="p-anteil" id="a-anteil1">0%</div>
+        </div>
+        <div class="beitrag-box">
+          <div class="p-name" id="a-name2">Person 2</div>
+          <div class="p-betrag" id="a-betrag2">0,00 €</div>
+          <div class="p-anteil" id="a-anteil2">0%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Add Entry</h2>
+      <div class="row" style="margin-bottom:10px">
+        <div class="laden-select-wrap" id="auto-typ-wrap">
+          <button type="button" class="laden-trigger" id="auto-typ-trigger" onclick="toggleAutoTypDropdown()">
+            <span class="laden-trigger-text" id="auto-typ-display">Type?</span>
+            <span class="laden-trigger-arrow">▾</span>
+          </button>
+          <div class="laden-dropdown" id="auto-typ-dropdown"></div>
+        </div>
+        <input id="auto-custom" type="text" placeholder="Enter type…" style="display:none;flex:1;min-width:120px" />
+        <input id="a-betrag" type="text" inputmode="decimal" placeholder="e.g. 45,00" style="max-width:130px" />
+      </div>
+      <div class="row">
+        <input id="a-datum" type="date" style="max-width:180px" />
+        <select id="a-wer"></select>
+        <button class="btn" id="btn-auto-hinzu" onclick="autoHinzufuegen()" style="flex:1">+ Add</button>
+      </div>
+      <div id="undo-wrap-auto" style="display:none;margin-top:10px">
+        <button onclick="rueckgaengig('auto')" style="width:100%;padding:10px;border:1.5px solid #6c63ff;border-radius:10px;background:#f5f3ff;color:#6c63ff;font-size:0.9rem;font-weight:600;cursor:pointer">↩ Undo</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>This month's entries</h2>
+      <table class="eintrag-table"><tbody id="auto-liste"></tbody></table>
+    </div>
+
+    <div class="card">
+      <h2>All months – Auto</h2>
+      <div id="auto-verlauf"><div class="leer">No data yet.</div></div>
+    </div>
+  </div>
+
 </div>
 
 <script type="module">
@@ -438,22 +506,32 @@
   var aktMonat = heute.getMonth();
   var alleData = {};
   var essenData = {};
+  var autoData = {};
   var aktiverTyp = 'gehen';
+  var aktiverAutoTyp = '';
   var aktiverTab = 'einkauf';
 
   // ── Undo state
   var undoEinkauf = null;
   var undoEssen = null;
+  var undoAuto = null;
   var editModeEinkauf = false;
   var editModeEssen = false;
+  var editModeAuto = false;
 
   // ── Edit-mode index (null = adding new, number = editing existing row)
   var editIndexEinkauf = null;
   var editIndexEssen = null;
+  var editIndexAuto = null;
 
   // ── Store templates
   var DEFAULT_STORES = ['Aldi', 'Corner Store', 'Edeka', 'Lidl', 'Netto', 'Penny', 'Rewe'];
   var customStores = [];
+
+  // ── Auto types
+  var DEFAULT_AUTO_TYPES = ['⛽ Tanken', '🅿️ Parken', '🔧 Wartung', '📋 Versicherung'];
+  var customAutoTypes = [];
+  var selectedAutoTyp = '';
 
   // ── Helpers
   function n1() { return document.getElementById('name1').value.trim() || 'Person 1'; }
@@ -591,8 +669,10 @@
   function updateUndoBtns() {
     var wE  = document.getElementById('undo-wrap-einkauf');
     var wEs = document.getElementById('undo-wrap-essen');
+    var wA  = document.getElementById('undo-wrap-auto');
     if (wE)  wE.style.display  = undoEinkauf ? '' : 'none';
     if (wEs) wEs.style.display = undoEssen   ? '' : 'none';
+    if (wA)  wA.style.display  = undoAuto    ? '' : 'none';
   }
 
   window.rueckgaengig = async function(tab) {
@@ -600,7 +680,7 @@
       alleData = undoEinkauf;
       undoEinkauf = null;
       if (editModeEinkauf) {
-        document.getElementById('laden').value = '';
+        resetLadenForm();
         document.getElementById('betrag').value = '';
         document.getElementById('e-datum-kauf').value = heute_str();
         editModeEinkauf = false;
@@ -620,6 +700,18 @@
       renderUI();
       updateUndoBtns();
       await speichereEssen();
+    } else if (tab === 'auto' && undoAuto) {
+      autoData = undoAuto;
+      undoAuto = null;
+      if (editModeAuto) {
+        resetAutoTypForm();
+        document.getElementById('a-betrag').value = '';
+        document.getElementById('a-datum').value = heute_str();
+        editModeAuto = false;
+      }
+      renderUI();
+      updateUndoBtns();
+      await speichereAuto();
     }
   };
 
@@ -628,8 +720,10 @@
     aktiverTab = tab;
     document.getElementById('panel-einkauf').style.display = tab === 'einkauf' ? '' : 'none';
     document.getElementById('panel-essen').style.display = tab === 'essen' ? '' : 'none';
+    document.getElementById('panel-auto').style.display = tab === 'auto' ? '' : 'none';
     document.getElementById('tab-einkauf').classList.toggle('active', tab === 'einkauf');
     document.getElementById('tab-essen').classList.toggle('active', tab === 'essen');
+    document.getElementById('tab-auto').classList.toggle('active', tab === 'auto');
     renderUI();
   };
 
@@ -648,6 +742,90 @@
     document.getElementById('btn-bestellen').classList.toggle('on', typ === 'bestellen');
   };
 
+  // ── Auto type dropdown helpers
+  function rebuildAutoTypOptions() {
+    var dd = document.getElementById('auto-typ-dropdown');
+    if (!dd) return;
+    var defaults = DEFAULT_AUTO_TYPES.slice();
+    var customs  = customAutoTypes.slice().sort();
+    var html = '<div class="laden-opt placeholder-opt" onclick="selectAutoTyp(\'\')">Type?</div>';
+    defaults.forEach(function(t) {
+      var esc = t.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html += '<div class="laden-opt' + (selectedAutoTyp===t?' selected':'') + '" onclick="selectAutoTyp(\'' + esc + '\')">' + t + '</div>';
+    });
+    if (customs.length > 0) html += '<div style="border-top:1px solid #f0edff;padding:0"></div>';
+    customs.forEach(function(t, i) {
+      var esc = t.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html += '<div class="laden-opt' + (selectedAutoTyp===t?' selected':'') + '" onclick="selectAutoTyp(\'' + esc + '\')">'
+        + '<span>' + t + '</span>'
+        + '<button class="laden-opt-del" onclick="event.stopPropagation();autoTypDelBtnClicked(' + i + ')" title="Remove">×</button>'
+        + '</div>';
+    });
+    html += '<div class="laden-opt other-opt" onclick="selectAutoTyp(\'__add__\')" style="border-top:1px solid #f0edff;color:#6c63ff;font-weight:600">+ Add type</div>';
+    dd.innerHTML = html;
+  }
+
+  window.toggleAutoTypDropdown = function() {
+    var dd = document.getElementById('auto-typ-dropdown');
+    var trigger = document.getElementById('auto-typ-trigger');
+    if (!dd) return;
+    var opening = !dd.classList.contains('open');
+    dd.classList.toggle('open', opening);
+    trigger.classList.toggle('open', opening);
+    if (opening) rebuildAutoTypOptions();
+  };
+
+  window.selectAutoTyp = function(value) {
+    selectedAutoTyp = value;
+    var display = document.getElementById('auto-typ-display');
+    var custom  = document.getElementById('auto-custom');
+    var dd      = document.getElementById('auto-typ-dropdown');
+    var trigger = document.getElementById('auto-typ-trigger');
+    if (value === '' || value == null) {
+      display.textContent = 'Type?'; display.className = 'laden-trigger-text';
+      custom.style.display = 'none';
+    } else if (value === '__add__') {
+      display.textContent = '+ Add type'; display.className = 'laden-trigger-text has-value';
+      custom.style.display = ''; custom.focus();
+    } else {
+      display.textContent = value; display.className = 'laden-trigger-text has-value';
+      custom.style.display = 'none';
+    }
+    dd.classList.remove('open'); trigger.classList.remove('open');
+    rebuildAutoTypOptions();
+  };
+
+  window.autoTypDelBtnClicked = function(index) {
+    customAutoTypes.splice(index, 1);
+    rebuildAutoTypOptions();
+    speichereEinstellungen();
+  };
+
+  document.addEventListener('click', function(e) {
+    var wrap = document.getElementById('auto-typ-wrap');
+    if (wrap && !wrap.contains(e.target)) {
+      var dd = document.getElementById('auto-typ-dropdown');
+      var trigger = document.getElementById('auto-typ-trigger');
+      if (dd) { dd.classList.remove('open'); }
+      if (trigger) trigger.classList.remove('open');
+    }
+  });
+
+  function getAutoTyp() {
+    if (selectedAutoTyp === '__add__')
+      return (document.getElementById('auto-custom').value || '').trim();
+    return selectedAutoTyp;
+  }
+
+  function resetAutoTypForm() {
+    selectedAutoTyp = '';
+    var display = document.getElementById('auto-typ-display');
+    if (display) { display.textContent = 'Type?'; display.className = 'laden-trigger-text'; }
+    var custom = document.getElementById('auto-custom');
+    if (custom) { custom.value = ''; custom.style.display = 'none'; }
+    rebuildAutoTypOptions();
+  }
+
   // ── Save
   async function speichern() {
     try {
@@ -665,13 +843,22 @@
       document.getElementById('sync-status').className = 'fehler';
     }
   }
+  async function speichereAuto() {
+    try {
+      await setDoc(doc(db, "budget", "auto_daten"), autoData);
+    } catch(e) {
+      document.getElementById('sync-status').textContent = 'Save error';
+      document.getElementById('sync-status').className = 'fehler';
+    }
+  }
   async function speichereEinstellungen() {
     try {
       await setDoc(doc(db, "budget", "einstellungen"), {
         name1: document.getElementById('name1').value,
         name2: document.getElementById('name2').value,
         budget: document.getElementById('budget').value,
-        vorlagen: customStores
+        vorlagen: customStores,
+        autoTypen: customAutoTypes
       });
     } catch(e) {}
   }
@@ -827,6 +1014,78 @@
     }
   };
 
+  // ── Add auto entry
+  window.autoHinzufuegen = async function() {
+    var typ = getAutoTyp();
+    var betragStr = document.getElementById('a-betrag').value.replace(',', '.');
+    var betrag = parseFloat(betragStr);
+    var datum = document.getElementById('a-datum').value || heute_str();
+    var person = document.getElementById('a-wer').value;
+    if (!typ) { alert('Please select or enter a type.'); return; }
+    if (!betragStr || isNaN(betrag) || betrag <= 0) { alert('Please enter a valid amount.'); return; }
+    var key = monatKey(aktJahr, aktMonat);
+    // Save custom type if explicitly added
+    if (selectedAutoTyp === '__add__') {
+      if (!DEFAULT_AUTO_TYPES.some(function(t){return t===typ;}) &&
+          !customAutoTypes.some(function(t){return t===typ;})) {
+        customAutoTypes.push(typ);
+        customAutoTypes.sort();
+        rebuildAutoTypOptions();
+        speichereEinstellungen();
+      }
+    }
+    undoAuto = JSON.parse(JSON.stringify(autoData));
+    editModeAuto = false;
+    if (!autoData[key]) autoData[key] = [];
+    var newEntry = { typ: typ, betrag: betrag, person: person, datum: datum, ts: Date.now() };
+    if (editIndexAuto !== null) {
+      autoData[key][editIndexAuto] = newEntry;
+      editIndexAuto = null;
+      document.getElementById('btn-auto-hinzu').textContent = '+ Add';
+    } else {
+      autoData[key].push(newEntry);
+    }
+    resetAutoTypForm();
+    document.getElementById('a-betrag').value = '';
+    document.getElementById('a-datum').value = heute_str();
+    renderUI();
+    updateUndoBtns();
+    await speichereAuto();
+  };
+
+  // ── Edit/Delete auto
+  window.autoBearbeiten = function(index) {
+    var key = monatKey(aktJahr, aktMonat);
+    var e = autoData[key][index];
+    editIndexAuto = index;
+    selectAutoTyp(e.typ);
+    document.getElementById('a-betrag').value = String(e.betrag).replace('.', ',');
+    document.getElementById('a-wer').value = e.person;
+    document.getElementById('a-datum').value = e.datum || heute_str();
+    document.getElementById('btn-auto-hinzu').textContent = '💾 Save';
+    renderAuto();
+  };
+
+  window.autoLoeschen = async function(index) {
+    var key = monatKey(aktJahr, aktMonat);
+    if (autoData[key]) {
+      if (editIndexAuto === index) {
+        editIndexAuto = null;
+        resetAutoTypForm();
+        document.getElementById('a-betrag').value = '';
+        document.getElementById('a-datum').value = heute_str();
+        document.getElementById('btn-auto-hinzu').textContent = '+ Add';
+      } else if (editIndexAuto !== null && editIndexAuto > index) {
+        editIndexAuto--;
+      }
+      undoAuto = JSON.parse(JSON.stringify(autoData));
+      autoData[key].splice(index, 1);
+      renderUI();
+      updateUndoBtns();
+      await speichereAuto();
+    }
+  };
+
   // ── Navigate to month
   window.zuMonat = function(j, m) { aktJahr = j; aktMonat = m; renderUI(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
@@ -845,18 +1104,25 @@
     var esel = document.getElementById('e-wer'), eselVal = esel.value;
     esel.innerHTML = '<option value="1">' + n1() + '</option><option value="2">' + n2() + '</option><option value="beide">Both</option>';
     if (eselVal) esel.value = eselVal;
+    var asel = document.getElementById('a-wer'), aselVal = asel.value;
+    asel.innerHTML = '<option value="1">' + n1() + '</option><option value="2">' + n2() + '</option><option value="beide">Both</option>';
+    if (aselVal) asel.value = aselVal;
 
     // Set today as default for dates if empty
     if (!document.getElementById('e-datum').value) document.getElementById('e-datum').value = heute_str();
     if (!document.getElementById('e-datum-kauf').value) document.getElementById('e-datum-kauf').value = heute_str();
+    if (!document.getElementById('a-datum').value) document.getElementById('a-datum').value = heute_str();
 
     document.getElementById('b-name1').textContent = n1();
     document.getElementById('b-name2').textContent = n2();
     document.getElementById('e-name1').textContent = n1();
     document.getElementById('e-name2').textContent = n2();
+    document.getElementById('a-name1').textContent = n1();
+    document.getElementById('a-name2').textContent = n2();
 
     renderEinkauf();
     renderEssen();
+    renderAuto();
     updateUndoBtns();
   }
 
@@ -1013,6 +1279,79 @@
     }
   }
 
+  function renderAuto() {
+    var key = monatKey(aktJahr, aktMonat);
+    var eintraege = autoData[key] || [];
+    var sum1 = 0, sum2 = 0, sumTanken = 0, sumSonstiges = 0;
+    eintraege.forEach(function(e) {
+      var b = e.betrag || 0;
+      if (e.person === '1') sum1 += b;
+      else if (e.person === '2') sum2 += b;
+      else { sum1 += b/2; sum2 += b/2; }
+      if (e.typ && e.typ.includes('Tanken')) sumTanken += b; else sumSonstiges += b;
+    });
+    var gesamt = eintraege.reduce(function(s,e) { return s+(e.betrag||0); }, 0);
+
+    document.getElementById('a-gesamt').textContent = euro(gesamt);
+    document.getElementById('a-tanken').textContent = euro(sumTanken);
+    document.getElementById('a-sonstiges').textContent = euro(sumSonstiges);
+    document.getElementById('a-betrag1').textContent = euro(sum1);
+    document.getElementById('a-betrag2').textContent = euro(sum2);
+    document.getElementById('a-anteil1').textContent = gesamt > 0 ? Math.round(sum1 / gesamt * 100) + '%' : '0%';
+    document.getElementById('a-anteil2').textContent = gesamt > 0 ? Math.round(sum2 / gesamt * 100) + '%' : '0%';
+
+    // Liste
+    var liste = document.getElementById('auto-liste');
+    if (eintraege.length === 0) {
+      liste.innerHTML = '<tr><td colspan="6" class="leer">No entries yet.</td></tr>';
+    } else {
+      var html = '';
+      for (var j = eintraege.length - 1; j >= 0; j--) {
+        var e = eintraege[j];
+        var init = e.person === '1' ? n1().charAt(0).toUpperCase()
+                 : e.person === '2' ? n2().charAt(0).toUpperCase() : '✌';
+        var initFarbe = e.person === '1' ? 'background:#ede9fe;color:#5b21b6'
+                      : e.person === '2' ? 'background:#fce7f3;color:#9d174d'
+                      : 'background:#fef3c7;color:#92400e';
+        var datKurz = formatDatumKurz(e.datum);
+        var editStyle = editIndexAuto === j ? ' style="background:#f0fdf4"' : '';
+        html += '<tr' + editStyle + '>'
+          + '<td class="col-name" style="' + (editIndexAuto===j ? 'border-left:3px solid #10b981;padding-left:8px;' : '') + '">' + (e.typ||'—') + '</td>'
+          + '<td class="col-dat">' + datKurz + '</td>'
+          + '<td class="col-who"><div style="width:24px;height:24px;border-radius:50%;' + initFarbe + ';font-size:0.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto">' + init + '</div></td>'
+          + '<td class="col-amt">' + euro(e.betrag) + '</td>'
+          + '<td class="col-act"><button class="btn-edit" onclick="autoBearbeiten(' + j + ')">✏️</button><button class="btn-del" onclick="autoLoeschen(' + j + ')">✕</button></td>'
+          + '</tr>';
+      }
+      liste.innerHTML = html;
+    }
+
+    // Verlauf
+    var alleAKeys = Object.keys(autoData).filter(function(k) { return autoData[k] && autoData[k].length > 0; });
+    alleAKeys.sort().reverse();
+    if (alleAKeys.length === 0) {
+      document.getElementById('auto-verlauf').innerHTML = '<div class="leer">No data from other months yet.</div>';
+    } else {
+      var vhtml = '';
+      var maxA = Math.max.apply(null, alleAKeys.map(function(k) {
+        return autoData[k].reduce(function(s,e) { return s+(e.betrag||0); }, 0);
+      })) || 1;
+      alleAKeys.forEach(function(mk2) {
+        var parts = mk2.split('-'), mj = parseInt(parts[0]), mm = parseInt(parts[1]);
+        var mEintraege = autoData[mk2];
+        var mGesamt = mEintraege.reduce(function(s,e) { return s+(e.betrag||0); }, 0);
+        var mProzent = Math.min((mGesamt / maxA) * 100, 100);
+        var istAktiv = (mj === aktJahr && mm === aktMonat);
+        vhtml += '<div class="verlauf-zeile" onclick="zuMonat(' + mj + ',' + mm + ')" style="' + (istAktiv ? 'background:#f0fdf4;border-radius:10px' : '') + '">'
+          + '<span class="verlauf-monat">' + MONATE[mm] + ' ' + mj + '</span>'
+          + '<div class="verlauf-balken-bg"><div class="verlauf-balken" style="width:' + mProzent + '%;background:#10b981"></div></div>'
+          + '<span class="verlauf-summe">' + euro(mGesamt) + '</span>'
+          + '</div>';
+      });
+      document.getElementById('auto-verlauf').innerHTML = vhtml;
+    }
+  }
+
   // ── Settings persistence
   document.getElementById('name1').addEventListener('input', renderUI);
   document.getElementById('name2').addEventListener('input', renderUI);
@@ -1029,10 +1368,12 @@
       if (s.name2) document.getElementById('name2').value = s.name2;
       if (s.budget) document.getElementById('budget').value = s.budget;
       if (Array.isArray(s.vorlagen)) customStores = s.vorlagen;
+      if (Array.isArray(s.autoTypen)) customAutoTypes = s.autoTypen;
     } else {
       speichereEinstellungen();
     }
     rebuildDatalist();
+    rebuildAutoTypOptions();
     renderVorlagen();
     renderUI();
   });
@@ -1052,7 +1393,13 @@
     renderUI();
   });
 
+  onSnapshot(doc(db, "budget", "auto_daten"), function(snapshot) {
+    autoData = snapshot.exists() ? snapshot.data() : {};
+    renderUI();
+  });
+
   rebuildDatalist();
+  rebuildAutoTypOptions();
   renderVorlagen();
   renderUI();
 </script>
