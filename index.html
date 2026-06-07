@@ -188,7 +188,7 @@
     #sync-status.fehler { color: #d4726e; }
     #sync-status.ok { color: #8bc4a0; }
 
-    .essen-entry-typ { padding: 2px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+    .essen-entry-typ { padding: 2px 6px; border-radius: 16px; font-size: 0.7rem; font-weight: 700; display: inline-block; }
     .essen-entry-typ.aus { background: #fff7ed; color: #c2410c; }
     .essen-entry-typ.best { background: #ede9fe; color: #5b21b6; }
 
@@ -239,14 +239,14 @@
 
     /* ALIGNED ENTRY TABLE */
     .eintrag-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .eintrag-table td { padding: 8px 3px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; overflow: hidden; }
+    .eintrag-table td { padding: 8px 3px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
     .eintrag-table tr:last-child td { border-bottom: none; }
-    .eintrag-table .col-name { width: 85px; font-weight: 500; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #2d2640; }
-    .eintrag-table .col-dat  { width: 40px; font-size: 0.72rem; color: #9e98bf; white-space: nowrap; }
-    .eintrag-table .col-who  { width: 28px; text-align: center; }
-    .eintrag-table .col-amt  { width: 68px; text-align: right; font-weight: 700; font-size: 0.88rem; white-space: nowrap; }
-    .eintrag-table .col-act  { width: 48px; text-align: right; white-space: nowrap; padding-right: 0; }
-    .eintrag-table .col-ico  { width: 24px; text-align: center; font-size: 0.92rem; }
+    .eintrag-table .col-name { flex: 1; min-width: 100px; font-weight: 500; font-size: 0.9rem; word-wrap: break-word; overflow-wrap: break-word; color: #2d2640; }
+    .eintrag-table .col-dat  { width: 50px; font-size: 0.72rem; color: #9e98bf; flex-shrink: 0; }
+    .eintrag-table .col-who  { width: 32px; text-align: center; flex-shrink: 0; }
+    .eintrag-table .col-amt  { width: 70px; text-align: right; font-weight: 700; font-size: 0.88rem; flex-shrink: 0; }
+    .eintrag-table .col-act  { width: 56px; text-align: right; flex-shrink: 0; padding-right: 0; }
+    .eintrag-table .col-ico  { width: 28px; text-align: center; font-size: 0.92rem; flex-shrink: 0; }
 
     /* STORE CHIPS in settings */
     .vorlage-chip { display: inline-flex; align-items: center; gap: 4px; background: #f5f3ff; color: #5b21b6; border-radius: 20px; padding: 3px 8px 3px 12px; font-size: 0.82rem; font-weight: 600; }
