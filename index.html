@@ -6,8 +6,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <!-- VERSION: v2024.06.8 - Change this to force cache refresh -->
-  <meta name="app-version" content="v2024.06.8" />
+  <!-- VERSION: v2024.06.9 - Change this to force cache refresh -->
+  <meta name="app-version" content="v2024.06.9" />
   <title>Expense Tracker</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -284,7 +284,7 @@
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-einkauf" onclick="switchTab('einkauf')">🛒 Groceries</button>
     <button class="tab-btn" id="tab-essen" onclick="switchTab('essen')">🍽️ Eating Out</button>
-    <button class="tab-btn" id="tab-auto" onclick="switchTab('auto')">🚗 Auto</button>
+    <button class="tab-btn" id="tab-auto" onclick="switchTab('auto')">🚗 Car</button>
     <button class="tab-btn" id="tab-stats" onclick="switchTab('stats')">📊 Stats</button>
   </div>
 
@@ -521,7 +521,7 @@
     </div>
 
     <div class="card">
-      <h2>All months – Auto</h2>
+      <h2>All months – Car</h2>
       <div id="auto-verlauf"><div class="leer">No data yet.</div></div>
     </div>
   </div>
@@ -530,7 +530,7 @@
 
 <script type="module">
   // Version-based cache buster
-  const currentVersion = 'v2024.06.8';
+  const currentVersion = 'v2024.06.9';
   const storedVersion = localStorage.getItem('app-version');
 
   if (storedVersion !== currentVersion) {
