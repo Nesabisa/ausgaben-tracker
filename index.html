@@ -6,8 +6,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <!-- VERSION: v2024.06.9 - Change this to force cache refresh -->
-  <meta name="app-version" content="v2024.06.9" />
+  <!-- VERSION: v2024.06.10 - Change this to force cache refresh -->
+  <meta name="app-version" content="v2024.06.10" />
   <title>Expense Tracker</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -284,7 +284,7 @@
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-einkauf" onclick="switchTab('einkauf')">🛒 Groceries</button>
     <button class="tab-btn" id="tab-essen" onclick="switchTab('essen')">🍽️ Eating Out</button>
-    <button class="tab-btn" id="tab-auto" onclick="switchTab('auto')">🚗 Car</button>
+    <button class="tab-btn" id="tab-auto" onclick="switchTab('auto')">🚙 Car</button>
     <button class="tab-btn" id="tab-stats" onclick="switchTab('stats')">📊 Stats</button>
   </div>
 
@@ -530,7 +530,7 @@
 
 <script type="module">
   // Version-based cache buster
-  const currentVersion = 'v2024.06.9';
+  const currentVersion = 'v2024.06.10';
   const storedVersion = localStorage.getItem('app-version');
 
   if (storedVersion !== currentVersion) {
@@ -1539,7 +1539,7 @@
       mhtml += '<tr style="background:#fef7f0"><td class="col-name" style="padding-left:20px">→ ' + n1() + '</td><td></td><td></td><td class="col-amt">' + euro(eatTotal1) + '</td><td></td></tr>';
       mhtml += '<tr style="background:#fef7f0"><td class="col-name" style="padding-left:20px">→ ' + n2() + '</td><td></td><td></td><td class="col-amt">' + euro(eatTotal2) + '</td><td></td></tr>';
 
-      mhtml += '<tr><td class="col-name">🚗 Auto</td><td class="col-dat"></td><td class="col-who"></td><td class="col-amt">' + euro(autoTotal1 + autoTotal2) + '</td><td></td></tr>';
+      mhtml += '<tr><td class="col-name">🚙 Auto</td><td class="col-dat"></td><td class="col-who"></td><td class="col-amt">' + euro(autoTotal1 + autoTotal2) + '</td><td></td></tr>';
       mhtml += '<tr style="background:#f0fdf4"><td class="col-name" style="padding-left:20px">→ ' + n1() + '</td><td></td><td></td><td class="col-amt">' + euro(autoTotal1) + '</td><td></td></tr>';
       mhtml += '<tr style="background:#f0fdf4"><td class="col-name" style="padding-left:20px">→ ' + n2() + '</td><td></td><td></td><td class="col-amt">' + euro(autoTotal2) + '</td><td></td></tr>';
 
