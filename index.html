@@ -254,6 +254,22 @@
   </style>
 </head>
 <body>
+<!-- Kill cache instantly on page load -->
+<script>
+  // Force kill all service workers FIRST
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(reg => reg.unregister().catch(()=>{}));
+    });
+  }
+  // Kill caches
+  if ('caches' in window) {
+    caches.keys().then(names => {
+      names.forEach(name => caches.delete(name).catch(()=>{}));
+    });
+  }
+</script>
+
 <div class="container">
   <h1>Expense Tracker</h1>
   <p style="text-align:center;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:#9e98bf;margin-bottom:16px">Sabine &amp; Pedro</p>
