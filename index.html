@@ -6,8 +6,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <!-- VERSION: v2024.06.11 - Change this to force cache refresh -->
-  <meta name="app-version" content="v2024.06.11" />
+  <!-- VERSION: v2026.10.19 - Change this to force cache refresh -->
+  <meta name="app-version" content="v2026.10.19" />
   <title>Expense Tracker</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -538,7 +538,7 @@
 
 <script type="module">
   // Version-based cache buster
-  const currentVersion = 'v2024.06.11';
+  const currentVersion = 'v2026.10.19';
   const storedVersion = localStorage.getItem('app-version');
 
   if (storedVersion !== currentVersion) {
@@ -586,6 +586,9 @@
   var alleData = {};
   var essenData = {};
   var autoData = {};
+  // true once Firestore has delivered that doc — saving before that would
+  // overwrite all existing months with an empty local copy
+  var datenGeladen = false, essenGeladen = false, autoGeladen = false;
   var aktiverTyp = 'gehen';
   var aktiverAutoTyp = '';
   var aktiverTab = 'einkauf';
@@ -908,7 +911,15 @@
   }
 
   // ── Save
+  // Guard: never write before the corresponding doc has loaded — setDoc replaces
+  // the whole document, so saving an empty local copy wipes every month.
+  function ladeSchutz(geladen) {
+    if (geladen) return true;
+    alert('Daten sind noch nicht geladen.\n\nBitte warte, bis oben "Connected" steht, und versuche es dann nochmal. (So gehen keine alten Einträge verloren.)');
+    return false;
+  }
   async function speichern() {
+    if (!ladeSchutz(datenGeladen)) return;
     try {
       await setDoc(doc(db, "budget", "daten"), alleData);
     } catch(e) {
@@ -917,6 +928,7 @@
     }
   }
   async function speichereEssen() {
+    if (!ladeSchutz(essenGeladen)) return;
     try {
       await setDoc(doc(db, "budget", "essen_daten"), essenData);
     } catch(e) {
@@ -925,6 +937,7 @@
     }
   }
   async function speichereAuto() {
+    if (!ladeSchutz(autoGeladen)) return;
     try {
       await setDoc(doc(db, "budget", "auto_daten"), autoData);
     } catch(e) {
@@ -946,6 +959,7 @@
 
   // ── Add grocery entry
   window.hinzufuegen = async function() {
+    if (!ladeSchutz(datenGeladen)) return;
     var laden = getLaden();
     var betragStr = document.getElementById('betrag').value.replace(',', '.');
     var betrag = parseFloat(betragStr);
@@ -1030,6 +1044,7 @@
 
   // ── Add essen entry
   window.essenHinzufuegen = async function() {
+    if (!ladeSchutz(essenGeladen)) return;
     var wo = document.getElementById('e-wo').value.trim();
     var betragStr = document.getElementById('e-betrag').value.replace(',', '.');
     var betrag = parseFloat(betragStr);
@@ -1097,6 +1112,7 @@
 
   // ── Add auto entry
   window.autoHinzufuegen = async function() {
+    if (!ladeSchutz(autoGeladen)) return;
     var typ = getAutoTyp();
     var betragStr = document.getElementById('a-betrag').value.replace(',', '.');
     var betrag = parseFloat(betragStr);
@@ -1567,6 +1583,7 @@
 
   onSnapshot(doc(db, "budget", "daten"), function(snapshot) {
     alleData = snapshot.exists() ? snapshot.data() : {};
+    datenGeladen = true;
     renderUI();
     document.getElementById('sync-status').textContent = '● Connected — changes sync instantly';
     document.getElementById('sync-status').className = 'ok';
@@ -1577,11 +1594,13 @@
 
   onSnapshot(doc(db, "budget", "essen_daten"), function(snapshot) {
     essenData = snapshot.exists() ? snapshot.data() : {};
+    essenGeladen = true;
     renderUI();
   });
 
   onSnapshot(doc(db, "budget", "auto_daten"), function(snapshot) {
     autoData = snapshot.exists() ? snapshot.data() : {};
+    autoGeladen = true;
     renderUI();
   });
 
