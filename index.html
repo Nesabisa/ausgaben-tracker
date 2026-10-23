@@ -6,8 +6,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <!-- VERSION: v2026.10.19 - Change this to force cache refresh -->
-  <meta name="app-version" content="v2026.10.19" />
+  <!-- VERSION: v2026.10.23 - Change this to force cache refresh -->
+  <meta name="app-version" content="v2026.10.23" />
   <title>Expense Tracker</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -538,7 +538,7 @@
 
 <script type="module">
   // Version-based cache buster
-  const currentVersion = 'v2026.10.19';
+  const currentVersion = 'v2026.10.23';
   const storedVersion = localStorage.getItem('app-version');
 
   if (storedVersion !== currentVersion) {
@@ -589,6 +589,7 @@
   // true once Firestore has delivered that doc — saving before that would
   // overwrite all existing months with an empty local copy
   var datenGeladen = false, essenGeladen = false, autoGeladen = false;
+  var einstellungenGeladen = false;
   var aktiverTyp = 'gehen';
   var aktiverAutoTyp = '';
   var aktiverTab = 'einkauf';
@@ -659,8 +660,7 @@
         + '<button class="laden-opt-del" onclick="event.stopPropagation();vorlageLoeschen(' + i + ')" title="Remove">×</button>'
         + '</div>';
     });
-    html += '<div class="laden-opt other-opt" onclick="selectLaden(\'__other__\')" style="border-top:1px solid #f0edff">Other store</div>';
-    html += '<div class="laden-opt other-opt" onclick="selectLaden(\'__add__\')" style="font-style:normal;color:#6c63ff;font-weight:600">+ Add store</div>';
+    html += '<div class="laden-opt other-opt" onclick="selectLaden(\'__add__\')" style="border-top:1px solid #f0edff;font-style:normal;color:#6c63ff;font-weight:600">+ New store</div>';
     dd.innerHTML = html;
   }
   function rebuildDatalist() { rebuildLadenOptions(); }
@@ -684,11 +684,8 @@
     if (value === '' || value == null) {
       display.textContent = 'Where?'; display.className = 'laden-trigger-text';
       custom.style.display = 'none';
-    } else if (value === '__other__') {
-      display.textContent = 'Other store'; display.className = 'laden-trigger-text has-value';
-      custom.style.display = ''; custom.focus();
-    } else if (value === '__add__') {
-      display.textContent = '+ Add store'; display.className = 'laden-trigger-text has-value';
+    } else if (value === '__other__' || value === '__add__') {
+      display.textContent = 'New store'; display.className = 'laden-trigger-text has-value';
       custom.style.display = ''; custom.focus();
     } else {
       display.textContent = value; display.className = 'laden-trigger-text has-value';
@@ -946,6 +943,9 @@
     }
   }
   async function speichereEinstellungen() {
+    // Same trap as the data docs: customStores/customAutoTypes start empty,
+    // so writing before the settings arrived would erase every saved store.
+    if (!einstellungenGeladen) return;
     try {
       await setDoc(doc(db, "budget", "einstellungen"), {
         name1: document.getElementById('name1').value,
@@ -968,8 +968,9 @@
     if (!laden) { alert('Please enter where you shopped.'); return; }
     if (!betragStr || isNaN(betrag) || betrag <= 0) { alert('Please enter a valid amount.'); return; }
     var key = monatKey(aktJahr, aktMonat);
-    // Save to dropdown only when user explicitly chose "+ Add store"
-    if (selectedLaden === '__add__') {
+    // Any hand-typed store is remembered — it can be removed again via the ✕
+    // in the dropdown. (Before, "Other store" silently forgot it.)
+    if (selectedLaden === '__add__' || selectedLaden === '__other__') {
       var ladenLow = laden.toLowerCase();
       if (!DEFAULT_STORES.some(function(s){return s.toLowerCase()===ladenLow;}) &&
           !customStores.some(function(s){return s.toLowerCase()===ladenLow;})) {
@@ -1572,7 +1573,9 @@
       if (s.budget) document.getElementById('budget').value = s.budget;
       if (Array.isArray(s.vorlagen)) customStores = s.vorlagen;
       if (Array.isArray(s.autoTypen)) customAutoTypes = s.autoTypen;
+      einstellungenGeladen = true;
     } else {
+      einstellungenGeladen = true; // no settings stored yet — safe to create
       speichereEinstellungen();
     }
     rebuildDatalist();
